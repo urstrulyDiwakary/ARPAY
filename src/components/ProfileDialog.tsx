@@ -25,15 +25,27 @@ interface ProfileDialogProps {
 }
 
 const roleColors: Record<string, string> = {
+  ADMIN: 'bg-purple-500/10 text-purple-600 border-purple-500/20',
+  MANAGER: 'bg-blue-500/10 text-blue-600 border-blue-500/20',
+  EMPLOYEE: 'bg-gray-500/10 text-gray-600 border-gray-500/20',
   Admin: 'bg-purple-500/10 text-purple-600 border-purple-500/20',
   Manager: 'bg-blue-500/10 text-blue-600 border-blue-500/20',
   Employee: 'bg-gray-500/10 text-gray-600 border-gray-500/20',
 };
 
 const statusColors: Record<string, string> = {
+  ACTIVE: 'bg-green-500/10 text-green-600 border-green-500/20',
+  INACTIVE: 'bg-gray-500/10 text-gray-600 border-gray-500/20',
+  DISABLED: 'bg-destructive/10 text-destructive border-destructive/20',
   Active: 'bg-green-500/10 text-green-600 border-green-500/20',
   Inactive: 'bg-gray-500/10 text-gray-600 border-gray-500/20',
   Disabled: 'bg-destructive/10 text-destructive border-destructive/20',
+};
+
+// Helper to format role/status for display (UPPERCASE -> Capitalized)
+const formatForDisplay = (value: string): string => {
+  if (!value) return '';
+  return value.charAt(0).toUpperCase() + value.slice(1).toLowerCase();
 };
 
 const notificationLabels: Record<keyof NotificationPreferences, { label: string; description: string }> = {
@@ -345,11 +357,11 @@ export function ProfileDialog({ open, onOpenChange }: ProfileDialogProps) {
                 <h2 className="text-xl font-semibold">{user.name}</h2>
                 
                 <div className="flex gap-2 mt-2">
-                  <Badge variant="outline" className={roleColors[user.role] || roleColors.Employee}>
-                    {user.role}
+                  <Badge variant="outline" className={roleColors[user.role] || roleColors.EMPLOYEE}>
+                    {formatForDisplay(user.role)}
                   </Badge>
-                  <Badge variant="outline" className={statusColors[user.status] || statusColors.Active}>
-                    {user.status}
+                  <Badge variant="outline" className={statusColors[user.status] || statusColors.ACTIVE}>
+                    {formatForDisplay(user.status)}
                   </Badge>
                 </div>
               </div>
@@ -373,7 +385,7 @@ export function ProfileDialog({ open, onOpenChange }: ProfileDialogProps) {
                   </div>
                   <div>
                     <p className="text-xs text-muted-foreground">Role</p>
-                    <p className="text-sm font-medium">{user.role}</p>
+                    <p className="text-sm font-medium">{formatForDisplay(user.role)}</p>
                   </div>
                 </div>
 

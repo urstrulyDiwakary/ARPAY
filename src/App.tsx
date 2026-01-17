@@ -10,7 +10,7 @@ import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import LoginPage from "./pages/LoginPage";
 import DashboardPage from "./pages/DashboardPage";
-import InvoicesPage from "./pages/InvoicesPage";
+import SalesPage from "./pages/SalesPage";
 import ExpensesPage from "./pages/ExpensesPage";
 import PaymentsPage from "./pages/PaymentsPage";
 import ApprovalsPage from "./pages/ApprovalsPage";
@@ -34,7 +34,7 @@ const App = () => (
               <Route path="/" element={<Index />} />
               <Route path="/login" element={<LoginPage />} />
               <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
-              <Route path="/invoices" element={<ProtectedRoute><InvoicesPage /></ProtectedRoute>} />
+              <Route path="/invoices" element={<ProtectedRoute><SalesPage /></ProtectedRoute>} />
               <Route path="/expenses" element={<ProtectedRoute><ExpensesPage /></ProtectedRoute>} />
               <Route path="/payments" element={<ProtectedRoute><PaymentsPage /></ProtectedRoute>} />
               <Route path="/approvals" element={<ProtectedRoute><ApprovalsPage /></ProtectedRoute>} />

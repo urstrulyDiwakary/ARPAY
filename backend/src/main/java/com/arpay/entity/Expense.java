@@ -1,5 +1,7 @@
 package com.arpay.entity;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonValue;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -68,15 +70,55 @@ public class Expense {
     private LocalDateTime updatedAt;
 
     public enum ExpenseCategory {
-        TRAVEL, OFFICE, MARKETING, EQUIPMENT, SALARY, FUEL, VEHICLE, OTHER
+        TRAVEL, OFFICE, MARKETING, EQUIPMENT, SALARY, FUEL, VEHICLE, OTHER;
+
+        @JsonCreator
+        public static ExpenseCategory fromString(String value) {
+            if (value == null) {
+                return null;
+            }
+            return ExpenseCategory.valueOf(value.toUpperCase());
+        }
+
+        @JsonValue
+        public String toJson() {
+            return this.name();
+        }
     }
 
     public enum ExpenseStatus {
-        PENDING, APPROVED, REJECTED
+        PENDING, APPROVED, REJECTED;
+
+        @JsonCreator
+        public static ExpenseStatus fromString(String value) {
+            if (value == null) {
+                return null;
+            }
+            return ExpenseStatus.valueOf(value.toUpperCase());
+        }
+
+        @JsonValue
+        public String toJson() {
+            return this.name();
+        }
     }
 
     public enum PaymentMode {
-        CASH, BANK_TRANSFER, CARD, UPI
+        CASH, BANK_TRANSFER, CARD, UPI;
+
+        @JsonCreator
+        public static PaymentMode fromString(String value) {
+            if (value == null) {
+                return null;
+            }
+            // Handle "Bank Transfer" -> "BANK_TRANSFER"
+            return PaymentMode.valueOf(value.toUpperCase().replace(" ", "_"));
+        }
+
+        @JsonValue
+        public String toJson() {
+            return this.name();
+        }
     }
 }
 

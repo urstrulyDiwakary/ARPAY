@@ -61,23 +61,23 @@ import {
 } from 'recharts';
 
 const categoryColors: Record<ExpenseCategory, string> = {
-  Travel: 'bg-blue-500/10 text-blue-600 border-blue-500/20',
-  Office: 'bg-purple-500/10 text-purple-600 border-purple-500/20',
-  Marketing: 'bg-pink-500/10 text-pink-600 border-pink-500/20',
-  Equipment: 'bg-orange-500/10 text-orange-600 border-orange-500/20',
-  Salary: 'bg-green-500/10 text-green-600 border-green-500/20',
-  Fuel: 'bg-amber-500/10 text-amber-600 border-amber-500/20',
-  Vehicle: 'bg-cyan-500/10 text-cyan-600 border-cyan-500/20',
-  Other: 'bg-gray-500/10 text-gray-600 border-gray-500/20',
+  TRAVEL: 'bg-blue-500/10 text-blue-600 border-blue-500/20',
+  OFFICE: 'bg-purple-500/10 text-purple-600 border-purple-500/20',
+  MARKETING: 'bg-pink-500/10 text-pink-600 border-pink-500/20',
+  EQUIPMENT: 'bg-orange-500/10 text-orange-600 border-orange-500/20',
+  SALARY: 'bg-green-500/10 text-green-600 border-green-500/20',
+  FUEL: 'bg-amber-500/10 text-amber-600 border-amber-500/20',
+  VEHICLE: 'bg-cyan-500/10 text-cyan-600 border-cyan-500/20',
+  OTHER: 'bg-gray-500/10 text-gray-600 border-gray-500/20',
 };
 
 const statusColors: Record<Expense['status'], string> = {
-  Approved: 'bg-green-500/10 text-green-600 border-green-500/20',
-  Pending: 'bg-amber-500/10 text-amber-600 border-amber-500/20',
-  Rejected: 'bg-destructive/10 text-destructive border-destructive/20',
+  APPROVED: 'bg-green-500/10 text-green-600 border-green-500/20',
+  PENDING: 'bg-amber-500/10 text-amber-600 border-amber-500/20',
+  REJECTED: 'bg-destructive/10 text-destructive border-destructive/20',
 };
 
-const categories: ExpenseCategory[] = ['Travel', 'Office', 'Marketing', 'Equipment', 'Salary', 'Fuel', 'Vehicle', 'Other'];
+const categories: ExpenseCategory[] = ['TRAVEL', 'OFFICE', 'MARKETING', 'EQUIPMENT', 'SALARY', 'FUEL', 'VEHICLE', 'OTHER'];
 
 const CHART_COLORS = [
   'hsl(234, 89%, 73%)',   // chart-1 - indigo
@@ -90,6 +90,16 @@ const CHART_COLORS = [
   'hsl(45, 93%, 47%)',    // chart-8 - yellow
 ];
 
+// Helper function to format enum values for display
+const formatForDisplay = (value: string): string => {
+  if (!value) return '';
+  // Handle special cases like BANK_TRANSFER -> Bank Transfer
+  return value
+    .split('_')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(' ');
+};
+
 export default function ExpensesPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -98,12 +108,12 @@ export default function ExpensesPage() {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [formData, setFormData] = useState({
-    category: 'Other' as ExpenseCategory,
+    category: 'OTHER' as ExpenseCategory,
     amount: 0,
     date: new Date().toISOString().split('T')[0],
     notes: '',
-    status: 'Pending' as Expense['status'],
-    paymentMode: 'Cash' as Expense['paymentMode'],
+    status: 'PENDING' as Expense['status'],
+    paymentMode: 'CASH' as Expense['paymentMode'],
     attachments: [] as ExpenseAttachment[],
   });
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -159,12 +169,12 @@ export default function ExpensesPage() {
     setIsDialogOpen(false);
     setSelectedExpense(null);
     setFormData({
-      category: 'Other',
+      category: 'OTHER',
       amount: 0,
       date: new Date().toISOString().split('T')[0],
       notes: '',
-      status: 'Pending',
-      paymentMode: 'Cash',
+      status: 'PENDING',
+      paymentMode: 'CASH',
       attachments: [],
     });
   };
@@ -172,12 +182,12 @@ export default function ExpensesPage() {
   const openCreateDialog = () => {
     setSelectedExpense(null);
     setFormData({
-      category: 'Other',
+      category: 'OTHER',
       amount: 0,
       date: new Date().toISOString().split('T')[0],
       notes: '',
-      status: 'Pending',
-      paymentMode: 'Cash',
+      status: 'PENDING',
+      paymentMode: 'CASH',
       attachments: [],
     });
     setIsDialogOpen(true);
@@ -255,12 +265,13 @@ export default function ExpensesPage() {
   const totalExpenses = filteredExpenses?.reduce((sum, exp) => sum + exp.amount, 0) || 0;
 
   // Calculate stats for tabs
-  const paidExpenses = expenses?.filter(e => e.status === 'Approved').reduce((sum, e) => sum + e.amount, 0) || 0;
-  const pendingExpenses = expenses?.filter(e => e.status === 'Pending').reduce((sum, e) => sum + e.amount, 0) || 0;
-  const salaryExpenses = expenses?.filter(e => e.category === 'Salary').reduce((sum, e) => sum + e.amount, 0) || 0;
-  const fuelExpenses = expenses?.filter(e => e.category === 'Fuel').reduce((sum, e) => sum + e.amount, 0) || 0;
-  const vehicleExpenses = expenses?.filter(e => e.category === 'Vehicle').reduce((sum, e) => sum + e.amount, 0) || 0;
+  const paidExpenses = expenses?.filter(e => e.status === 'APPROVED').reduce((sum, e) => sum + e.amount, 0) || 0;
+  const pendingExpenses = expenses?.filter(e => e.status === 'PENDING').reduce((sum, e) => sum + e.amount, 0) || 0;
+  const salaryExpenses = expenses?.filter(e => e.category === 'SALARY').reduce((sum, e) => sum + e.amount, 0) || 0;
+  const fuelExpenses = expenses?.filter(e => e.category === 'FUEL').reduce((sum, e) => sum + e.amount, 0) || 0;
+  const vehicleExpenses = expenses?.filter(e => e.category === 'VEHICLE').reduce((sum, e) => sum + e.amount, 0) || 0;
   const highestExpense = expenses?.reduce((max, e) => e.amount > max ? e.amount : max, 0) || 0;
+  const totalUserSalary = users?.reduce((sum, user) => sum + (user.salary || 0), 0) || 0;
 
   // Property-wise expenses data (mock data for demonstration)
   const propertyData = [
@@ -318,18 +329,18 @@ export default function ExpensesPage() {
   // Tab data for quick filters
   const tabFilters = [
     { id: 'all', label: 'All', count: expenses?.length || 0 },
-    { id: 'Approved', label: 'Paid', count: expenses?.filter(e => e.status === 'Approved').length || 0 },
-    { id: 'Pending', label: 'Pending', count: expenses?.filter(e => e.status === 'Pending').length || 0 },
-    { id: 'Salary', label: 'Salary', count: expenses?.filter(e => e.category === 'Salary').length || 0 },
-    { id: 'Fuel', label: 'Fuel', count: expenses?.filter(e => e.category === 'Fuel').length || 0 },
-    { id: 'Vehicle', label: 'Vehicle', count: expenses?.filter(e => e.category === 'Vehicle').length || 0 },
+    { id: 'APPROVED', label: 'Paid', count: expenses?.filter(e => e.status === 'APPROVED').length || 0 },
+    { id: 'PENDING', label: 'Pending', count: expenses?.filter(e => e.status === 'PENDING').length || 0 },
+    { id: 'SALARY', label: 'Salary', count: expenses?.filter(e => e.category === 'SALARY').length || 0 },
+    { id: 'FUEL', label: 'Fuel', count: expenses?.filter(e => e.category === 'FUEL').length || 0 },
+    { id: 'VEHICLE', label: 'Vehicle', count: expenses?.filter(e => e.category === 'VEHICLE').length || 0 },
   ];
 
   const handleTabChange = (value: string) => {
     if (value === 'all') {
       setCategoryFilter('all');
       setStatusFilter('all');
-    } else if (value === 'Approved' || value === 'Pending') {
+    } else if (value === 'APPROVED' || value === 'PENDING') {
       setCategoryFilter('all');
       setStatusFilter(value);
     } else {
@@ -344,10 +355,10 @@ export default function ExpensesPage() {
       <div className="flex items-start justify-between">
         <div className="flex gap-2 flex-wrap">
           <Badge variant="outline" className={categoryColors[expense.category]}>
-            {expense.category}
+            {formatForDisplay(expense.category)}
           </Badge>
           <Badge variant="outline" className={statusColors[expense.status]}>
-            {expense.status}
+            {formatForDisplay(expense.status)}
           </Badge>
         </div>
         <div className="flex gap-1">
@@ -540,8 +551,8 @@ export default function ExpensesPage() {
                     <Users className="h-4 w-4 text-blue-600" />
                     <p className="text-xs text-muted-foreground">Salary</p>
                   </div>
-                  <p className="text-lg sm:text-xl font-bold text-blue-600">₹{salaryExpenses.toLocaleString('en-IN')}</p>
-                  <p className="text-[11px] text-muted-foreground mt-1">Users' salaries: ₹{totalUserSalary.toLocaleString('en-IN')}</p>
+                  <p className="text-lg sm:text-xl font-bold text-blue-600">₹{totalUserSalary.toLocaleString('en-IN')}</p>
+                  <p className="text-[11px] text-muted-foreground mt-1">{users?.filter(u => u.salary && u.salary > 0).length || 0} users with salary</p>
                 </div>
                 <div className="p-3 bg-gradient-to-br from-purple-500/20 to-purple-600/10 rounded-lg border border-purple-500/20">
                   <div className="flex items-center gap-2 mb-1">
@@ -643,35 +654,35 @@ export default function ExpensesPage() {
         <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
           {tabFilters.map((tab) => {
             const isActive = (tab.id === 'all' && categoryFilter === 'all' && statusFilter === 'all') ||
-                            (tab.id === 'Approved' && statusFilter === 'Approved') ||
-                            (tab.id === 'Pending' && statusFilter === 'Pending') ||
-                            ((tab.id === 'Salary' || tab.id === 'Fuel' || tab.id === 'Vehicle') && categoryFilter === tab.id);
-            
+                            (tab.id === 'APPROVED' && statusFilter === 'APPROVED') ||
+                            (tab.id === 'PENDING' && statusFilter === 'PENDING') ||
+                            ((tab.id === 'SALARY' || tab.id === 'FUEL' || tab.id === 'VEHICLE') && categoryFilter === tab.id);
+
             const colorClasses: Record<string, string> = {
               all: 'ring-primary border-primary bg-gradient-to-br from-primary/10 to-primary/5',
-              Approved: 'ring-green-500 border-green-500 bg-gradient-to-br from-green-500/10 to-green-500/5',
-              Pending: 'ring-amber-500 border-amber-500 bg-gradient-to-br from-amber-500/10 to-amber-500/5',
-              Salary: 'ring-blue-500 border-blue-500 bg-gradient-to-br from-blue-500/10 to-blue-500/5',
-              Fuel: 'ring-orange-500 border-orange-500 bg-gradient-to-br from-orange-500/10 to-orange-500/5',
-              Vehicle: 'ring-cyan-500 border-cyan-500 bg-gradient-to-br from-cyan-500/10 to-cyan-500/5',
+              APPROVED: 'ring-green-500 border-green-500 bg-gradient-to-br from-green-500/10 to-green-500/5',
+              PENDING: 'ring-amber-500 border-amber-500 bg-gradient-to-br from-amber-500/10 to-amber-500/5',
+              SALARY: 'ring-blue-500 border-blue-500 bg-gradient-to-br from-blue-500/10 to-blue-500/5',
+              FUEL: 'ring-orange-500 border-orange-500 bg-gradient-to-br from-orange-500/10 to-orange-500/5',
+              VEHICLE: 'ring-cyan-500 border-cyan-500 bg-gradient-to-br from-cyan-500/10 to-cyan-500/5',
             };
             
             const textColors: Record<string, string> = {
               all: 'text-primary',
-              Approved: 'text-green-600',
-              Pending: 'text-amber-600',
-              Salary: 'text-blue-600',
-              Fuel: 'text-orange-600',
-              Vehicle: 'text-cyan-600',
+              APPROVED: 'text-green-600',
+              PENDING: 'text-amber-600',
+              SALARY: 'text-blue-600',
+              FUEL: 'text-orange-600',
+              VEHICLE: 'text-cyan-600',
             };
 
             const icons: Record<string, React.ReactNode> = {
               all: <Wallet className={`h-4 w-4 ${isActive ? 'text-primary' : 'text-muted-foreground'}`} />,
-              Approved: <CheckCircle className={`h-4 w-4 ${isActive ? 'text-green-600' : 'text-green-500'}`} />,
-              Pending: <Clock className={`h-4 w-4 ${isActive ? 'text-amber-600' : 'text-amber-500'}`} />,
-              Salary: <Users className={`h-4 w-4 ${isActive ? 'text-blue-600' : 'text-blue-500'}`} />,
-              Fuel: <Fuel className={`h-4 w-4 ${isActive ? 'text-orange-600' : 'text-orange-500'}`} />,
-              Vehicle: <Car className={`h-4 w-4 ${isActive ? 'text-cyan-600' : 'text-cyan-500'}`} />,
+              APPROVED: <CheckCircle className={`h-4 w-4 ${isActive ? 'text-green-600' : 'text-green-500'}`} />,
+              PENDING: <Clock className={`h-4 w-4 ${isActive ? 'text-amber-600' : 'text-amber-500'}`} />,
+              SALARY: <Users className={`h-4 w-4 ${isActive ? 'text-blue-600' : 'text-blue-500'}`} />,
+              FUEL: <Fuel className={`h-4 w-4 ${isActive ? 'text-orange-600' : 'text-orange-500'}`} />,
+              VEHICLE: <Car className={`h-4 w-4 ${isActive ? 'text-cyan-600' : 'text-cyan-500'}`} />,
             };
             
             return (
@@ -704,7 +715,7 @@ export default function ExpensesPage() {
                     <SelectContent>
                       <SelectItem value="all">All Categories</SelectItem>
                       {categories.map((cat) => (
-                        <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                        <SelectItem key={cat} value={cat}>{formatForDisplay(cat)}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -744,7 +755,7 @@ export default function ExpensesPage() {
                   <SelectContent>
                     <SelectItem value="all">All Categories</SelectItem>
                     {categories.map((cat) => (
-                      <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                      <SelectItem key={cat} value={cat}>{formatForDisplay(cat)}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -757,9 +768,9 @@ export default function ExpensesPage() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Status</SelectItem>
-                    <SelectItem value="Pending">Pending</SelectItem>
-                    <SelectItem value="Approved">Approved</SelectItem>
-                    <SelectItem value="Rejected">Rejected</SelectItem>
+                    <SelectItem value="PENDING">Pending</SelectItem>
+                    <SelectItem value="APPROVED">Approved</SelectItem>
+                    <SelectItem value="REJECTED">Rejected</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -820,15 +831,15 @@ export default function ExpensesPage() {
                       <td className="py-3 font-medium">{expense.id}</td>
                       <td className="py-3">
                         <Badge variant="outline" className={categoryColors[expense.category]}>
-                          {expense.category}
+                          {formatForDisplay(expense.category)}
                         </Badge>
                       </td>
                       <td className="py-3">₹{expense.amount.toLocaleString('en-IN')}</td>
-                      <td className="py-3">{expense.paymentMode || '-'}</td>
+                      <td className="py-3">{expense.paymentMode ? formatForDisplay(expense.paymentMode) : '-'}</td>
                       <td className="py-3">{expense.date}</td>
                       <td className="py-3">
                         <Badge variant="outline" className={statusColors[expense.status]}>
-                          {expense.status}
+                          {formatForDisplay(expense.status)}
                         </Badge>
                       </td>
                       <td className="py-3 text-right">
@@ -876,7 +887,7 @@ export default function ExpensesPage() {
                 </SelectTrigger>
                 <SelectContent>
                   {categories.map((cat) => (
-                    <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                    <SelectItem key={cat} value={cat}>{formatForDisplay(cat)}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -902,9 +913,9 @@ export default function ExpensesPage() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Cash">Cash</SelectItem>
-                  <SelectItem value="Card">Card</SelectItem>
-                  <SelectItem value="Bank Transfer">Bank Transfer</SelectItem>
+                  <SelectItem value="CASH">Cash</SelectItem>
+                  <SelectItem value="CARD">Card</SelectItem>
+                  <SelectItem value="BANK_TRANSFER">Bank Transfer</SelectItem>
                   <SelectItem value="UPI">UPI</SelectItem>
                 </SelectContent>
               </Select>

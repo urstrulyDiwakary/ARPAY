@@ -44,45 +44,49 @@ import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
 import { exportToCSV } from '@/utils/export';
 
-// Helper function to normalize roles from database (UPPERCASE) to display format (Capitalized)
+// Helper function to normalize roles to uppercase format
 const normalizeRole = (role: string): User['role'] => {
-  if (!role) return 'Employee';
-  const normalized = role.charAt(0).toUpperCase() + role.slice(1).toLowerCase();
-  return normalized as User['role'];
+  if (!role) return 'EMPLOYEE';
+  return role.toUpperCase() as User['role'];
 };
 
-// Helper function to normalize status from database (UPPERCASE) to display format (Capitalized)
+// Helper function to normalize status to uppercase format
 const normalizeStatus = (status: string): User['status'] => {
-  if (!status) return 'Active';
-  const normalized = status.charAt(0).toUpperCase() + status.slice(1).toLowerCase();
-  return normalized as User['status'];
+  if (!status) return 'ACTIVE';
+  return status.toUpperCase() as User['status'];
+};
+
+// Helper to format role/status for display (UPPERCASE -> Capitalized)
+const formatForDisplay = (value: string): string => {
+  if (!value) return '';
+  return value.charAt(0).toUpperCase() + value.slice(1).toLowerCase();
 };
 
 const roleColors: Record<string, string> = {
-  Admin: 'bg-purple-500/10 text-purple-600 border-purple-500/20',
-  Manager: 'bg-blue-500/10 text-blue-600 border-blue-500/20',
-  Employee: 'bg-gray-500/10 text-gray-600 border-gray-500/20',
   ADMIN: 'bg-purple-500/10 text-purple-600 border-purple-500/20',
   MANAGER: 'bg-blue-500/10 text-blue-600 border-blue-500/20',
   EMPLOYEE: 'bg-gray-500/10 text-gray-600 border-gray-500/20',
+  Admin: 'bg-purple-500/10 text-purple-600 border-purple-500/20',
+  Manager: 'bg-blue-500/10 text-blue-600 border-blue-500/20',
+  Employee: 'bg-gray-500/10 text-gray-600 border-gray-500/20',
   admin: 'bg-purple-500/10 text-purple-600 border-purple-500/20',
   manager: 'bg-blue-500/10 text-blue-600 border-blue-500/20',
   employee: 'bg-gray-500/10 text-gray-600 border-gray-500/20',
 };
 
 const statusColors: Record<string, string> = {
-  Active: 'bg-green-500/10 text-green-600 border-green-500/20',
-  Inactive: 'bg-gray-500/10 text-gray-600 border-gray-500/20',
-  Disabled: 'bg-destructive/10 text-destructive border-destructive/20',
   ACTIVE: 'bg-green-500/10 text-green-600 border-green-500/20',
   INACTIVE: 'bg-gray-500/10 text-gray-600 border-gray-500/20',
   DISABLED: 'bg-destructive/10 text-destructive border-destructive/20',
+  Active: 'bg-green-500/10 text-green-600 border-green-500/20',
+  Inactive: 'bg-gray-500/10 text-gray-600 border-gray-500/20',
+  Disabled: 'bg-destructive/10 text-destructive border-destructive/20',
   active: 'bg-green-500/10 text-green-600 border-green-500/20',
   inactive: 'bg-gray-500/10 text-gray-600 border-gray-500/20',
   disabled: 'bg-destructive/10 text-destructive border-destructive/20',
 };
 
-const roles: User['role'][] = ['Admin', 'Manager', 'Employee'];
+const roles: User['role'][] = ['ADMIN', 'MANAGER', 'EMPLOYEE'];
 
 // Role Permission Matrix
 const permissionModules = [
@@ -100,9 +104,9 @@ const permissionModules = [
 // Helper function to safely get default permissions
 const getDefaultPermissions = (role: string): string[] => {
   const normalizedRole = normalizeRole(role);
-  if (normalizedRole === 'Admin') {
+  if (normalizedRole === 'ADMIN') {
     return permissionModules.map(p => p.id);
-  } else if (normalizedRole === 'Manager') {
+  } else if (normalizedRole === 'MANAGER') {
     return permissionModules.map(p => p.id);
   } else {
     return ['dashboard', 'invoices', 'expenses', 'payments', 'approvals', 'time_tracking', 'notifications'];
@@ -122,7 +126,7 @@ interface ExtendedFormData {
   permissions: string[];
   department?: string;
   dateOfJoining: string;
-  salary?: number | '';
+  salary?: number | '' | null;
 }
 
 interface UserCreateData extends Omit<User, 'id'> {
@@ -144,10 +148,10 @@ export default function UsersPage() {
     name: '',
     mobile: '',
     email: '',
-    role: 'Employee',
+    role: 'EMPLOYEE',
     assignedManager: '',
     password: '',
-    status: 'Active',
+    status: 'ACTIVE',
     profilePhoto: null,
     permissions: ['dashboard', 'invoices', 'expenses', 'payments', 'approvals', 'time_tracking', 'notifications'],
     department: '',
@@ -158,14 +162,16 @@ export default function UsersPage() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
-  const { data: users, isLoading } = useQuery<User[]>({
+  const { data: users, isLoading, error } = useQuery<User[]>({
     queryKey: ['users'],
     queryFn: () => userApi.getAll(),
+    retry: 1,
+    retryDelay: 1000,
   });
 
   const inactiveDisabledCount = (users?.filter(u => {
     const status = normalizeStatus(u.status);
-    return status === 'Inactive' || status === 'Disabled';
+    return status === 'INACTIVE' || status === 'DISABLED';
   }) ?? []).length;
 
   const filteredUsers = users?.filter((user) => {
@@ -176,21 +182,21 @@ export default function UsersPage() {
 
     let matchesTab = true;
     if (activeTab === 'admins') {
-      matchesTab = normalizeRole(user.role) === 'Admin';
+      matchesTab = normalizeRole(user.role) === 'ADMIN';
     } else if (activeTab === 'managers') {
-      matchesTab = normalizeRole(user.role) === 'Manager';
+      matchesTab = normalizeRole(user.role) === 'MANAGER';
     } else if (activeTab === 'employees') {
-      matchesTab = normalizeRole(user.role) === 'Employee';
+      matchesTab = normalizeRole(user.role) === 'EMPLOYEE';
     } else if (activeTab === 'disabled') {
-      matchesTab = normalizeStatus(user.status) === 'Disabled';
+      matchesTab = normalizeStatus(user.status) === 'DISABLED';
     } else if (activeTab === 'inactive-disabled') {
       const status = normalizeStatus(user.status);
-      matchesTab = status === 'Inactive' || status === 'Disabled';
+      matchesTab = status === 'INACTIVE' || status === 'DISABLED';
     } else if (activeTab === 'active-today') {
-      matchesTab = normalizeStatus(user.status) === 'Active' && user.lastActive !== undefined;
+      matchesTab = normalizeStatus(user.status) === 'ACTIVE' && user.lastActive !== undefined;
     } else if (activeTab === 'all') {
       const status = normalizeStatus(user.status);
-      matchesTab = status === 'Active';
+      matchesTab = status === 'ACTIVE';
     }
 
     return matchesSearch && matchesRole && matchesStatus && matchesTab;
@@ -256,10 +262,10 @@ export default function UsersPage() {
         name: '',
         mobile: '',
         email: '',
-        role: 'Employee',
+        role: 'EMPLOYEE',
         assignedManager: '',
         password: '',
-        status: 'Active',
+        status: 'ACTIVE',
         profilePhoto: null,
         permissions: ['dashboard', 'invoices', 'expenses', 'payments', 'approvals', 'time_tracking', 'notifications'],
         department: '',
@@ -277,12 +283,12 @@ export default function UsersPage() {
       name: '',
       mobile: '',
       email: '',
-      role: 'Employee',
+      role: 'EMPLOYEE',
       assignedManager: '',
       password: '',
-      status: 'Active',
+      status: 'ACTIVE',
       profilePhoto: null,
-      permissions: getDefaultPermissions('Employee'),
+      permissions: getDefaultPermissions('EMPLOYEE'),
       department: '',
       dateOfJoining: '',
       salary: '',
@@ -324,7 +330,7 @@ export default function UsersPage() {
         avatar: formData.profilePhoto,
         phone: formData.mobile,
         dateOfJoining: formData.dateOfJoining,
-        salary: formData.salary ? Number(formData.salary) : undefined,
+        salary: formData.salary === '' || formData.salary === null ? null : Number(formData.salary),
       };
 
       if (formData.password && formData.password.trim()) {
@@ -347,7 +353,7 @@ export default function UsersPage() {
         avatar: formData.profilePhoto,
         employeeId: formData.employeeId,
         dateOfJoining: formData.dateOfJoining,
-        salary: formData.salary ? Number(formData.salary) : undefined,
+        salary: formData.salary ? Number(formData.salary) : null,
       } as UserCreateData);
     }
   };
@@ -417,7 +423,7 @@ export default function UsersPage() {
   };
 
   const handleRoleChange = useCallback((newRole: string) => {
-    const validRoles = ['Admin', 'Manager', 'Employee'];
+    const validRoles = ['ADMIN', 'MANAGER', 'EMPLOYEE'];
     if (!validRoles.includes(newRole)) {
       return;
     }
@@ -433,10 +439,10 @@ export default function UsersPage() {
   }, []);
 
   const isMutating = createMutation.isPending || updateMutation.isPending;
-  const adminCount = (users?.filter(u => normalizeRole(u.role) === 'Admin') ?? []).length;
-  const managerCount = (users?.filter(u => normalizeRole(u.role) === 'Manager') ?? []).length;
-  const employeeCount = (users?.filter(u => normalizeRole(u.role) === 'Employee') ?? []).length;
-  const activeTodayCount = (users?.filter(u => normalizeStatus(u.status) === 'Active' && u.lastActive) ?? []).length;
+  const adminCount = (users?.filter(u => normalizeRole(u.role) === 'ADMIN') ?? []).length;
+  const managerCount = (users?.filter(u => normalizeRole(u.role) === 'MANAGER') ?? []).length;
+  const employeeCount = (users?.filter(u => normalizeRole(u.role) === 'EMPLOYEE') ?? []).length;
+  const activeTodayCount = (users?.filter(u => normalizeStatus(u.status) === 'ACTIVE' && u.lastActive) ?? []).length;
 
   const safePermissions = Array.isArray(formData.permissions) ? formData.permissions : [];
 
@@ -458,15 +464,15 @@ export default function UsersPage() {
           </div>
         </div>
         <div className="flex gap-2 flex-wrap">
-          <Badge variant="outline" className={roleColors[user.role]}>{user.role}</Badge>
-          <Badge variant="outline" className={statusColors[user.status]}>{user.status}</Badge>
+          <Badge variant="outline" className={roleColors[user.role]}>{formatForDisplay(user.role)}</Badge>
+          <Badge variant="outline" className={statusColors[user.status]}>{formatForDisplay(user.status)}</Badge>
         </div>
         <div className="flex gap-2 pt-2 border-t">
           <Button variant="outline" size="sm" className="flex-1" onClick={() => openEditDialog(user)}>
             <Pencil className="mr-1 h-3 w-3" />
             Edit
           </Button>
-          {normalizeStatus(user.status) === 'Active' && (
+          {normalizeStatus(user.status) === 'ACTIVE' && (
               <Button
                   variant="outline"
                   size="sm"
@@ -534,7 +540,7 @@ export default function UsersPage() {
                   <Users className={`h-5 w-5 sm:h-6 sm:w-6 ${activeTab === 'all' ? 'text-primary' : 'text-blue-500'}`} />
                 </div>
                 <p className="text-xs sm:text-sm font-medium">All Accounts</p>
-                <p className={`text-lg sm:text-xl font-bold ${activeTab === 'all' ? 'text-primary' : ''}`}>{users?.filter(u => normalizeStatus(u.status) === 'Active').length || 0}</p>
+                <p className={`text-lg sm:text-xl font-bold ${activeTab === 'all' ? 'text-primary' : ''}`}>{users?.filter(u => normalizeStatus(u.status) === 'ACTIVE').length || 0}</p>
               </CardContent>
             </Card>
             <Card
@@ -618,7 +624,7 @@ export default function UsersPage() {
                   <SelectContent>
                     <SelectItem value="all">All Roles</SelectItem>
                     {roles.map((role) => (
-                        <SelectItem key={role} value={role}>{role}</SelectItem>
+                        <SelectItem key={role} value={role}>{formatForDisplay(role)}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -628,9 +634,9 @@ export default function UsersPage() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Status</SelectItem>
-                    <SelectItem value="Active">Active</SelectItem>
-                    <SelectItem value="Inactive">Inactive</SelectItem>
-                    <SelectItem value="Disabled">Disabled</SelectItem>
+                    <SelectItem value="ACTIVE">Active</SelectItem>
+                    <SelectItem value="INACTIVE">Inactive</SelectItem>
+                    <SelectItem value="DISABLED">Disabled</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -640,7 +646,12 @@ export default function UsersPage() {
           <div className="space-y-4">
             <div className="space-y-4">
               <div className="md:hidden space-y-3">
-                {isLoading ? (
+                {error ? (
+                    <div className="text-center py-8 text-destructive">
+                      <p>Error loading users</p>
+                      <p className="text-sm text-muted-foreground mt-2">{error instanceof Error ? error.message : 'Unknown error'}</p>
+                    </div>
+                ) : isLoading ? (
                     [...Array(4)].map((_, i) => <Skeleton key={i} className="h-40 w-full" />)
                 ) : filteredUsers?.length === 0 ? (
                     <div className="text-center py-8 text-muted-foreground">No users found</div>
@@ -691,12 +702,12 @@ export default function UsersPage() {
                               <td className="py-3">{user.email}</td>
                               <td className="py-3">
                                 <Badge variant="outline" className={roleColors[user.role]}>
-                                  {user.role}
+                                  {formatForDisplay(user.role)}
                                 </Badge>
                               </td>
                               <td className="py-3">
                                 <Badge variant="outline" className={statusColors[user.status]}>
-                                  {user.status}
+                                  {formatForDisplay(user.status)}
                                 </Badge>
                               </td>
                               <td className="py-3 text-right">
@@ -704,7 +715,7 @@ export default function UsersPage() {
                                   <Button variant="ghost" size="icon" onClick={() => openEditDialog(user)}>
                                     <Pencil className="h-4 w-4" />
                                   </Button>
-                                  {normalizeStatus(user.status) === 'Active' && (
+                                  {normalizeStatus(user.status) === 'ACTIVE' && (
                                       <Button
                                           variant="ghost"
                                           size="icon"
@@ -817,7 +828,7 @@ export default function UsersPage() {
                     <SelectContent>
                       {(users ?? []).filter(u => {
                         const normalized = normalizeRole(u.role);
-                        return normalized === 'Manager' || normalized === 'Admin';
+                        return normalized === 'MANAGER' || normalized === 'ADMIN';
                       }).map((manager) => (
                           <SelectItem key={manager.id} value={manager.id}>{manager.name}</SelectItem>
                       ))}
@@ -877,16 +888,16 @@ export default function UsersPage() {
                 <div className="space-y-2">
                   <Label htmlFor="role">User Role *</Label>
                   <Select
-                      value={formData.role || 'Employee'}
+                      value={formData.role || 'EMPLOYEE'}
                       onValueChange={handleRoleChange}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select role" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="Employee">Employee</SelectItem>
-                      <SelectItem value="Manager">Manager</SelectItem>
-                      <SelectItem value="Admin">Admin</SelectItem>
+                      <SelectItem value="EMPLOYEE">Employee</SelectItem>
+                      <SelectItem value="MANAGER">Manager</SelectItem>
+                      <SelectItem value="ADMIN">Admin</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

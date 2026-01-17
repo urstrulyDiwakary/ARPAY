@@ -3,15 +3,15 @@ export interface User {
   id: string;
   name: string;
   email: string;
-  role: 'Admin' | 'Manager' | 'Employee';
-  status: 'Active' | 'Inactive' | 'Disabled';
+  role: 'ADMIN' | 'MANAGER' | 'EMPLOYEE';
+  status: 'ACTIVE' | 'INACTIVE' | 'DISABLED';
   avatar?: string;
   lastActive?: string;
   department?: string;
   employeeId?: string;
   phone?: string;
   dateOfJoining?: string;
-  salary?: number;
+  salary?: number | null;
 }
 
 export interface AuthState {
@@ -50,7 +50,7 @@ export interface Invoice {
 }
 
 // Expense Types
-export type ExpenseCategory = 'Travel' | 'Office' | 'Marketing' | 'Equipment' | 'Salary' | 'Fuel' | 'Vehicle' | 'Other';
+export type ExpenseCategory = 'TRAVEL' | 'OFFICE' | 'MARKETING' | 'EQUIPMENT' | 'SALARY' | 'FUEL' | 'VEHICLE' | 'OTHER';
 
 export interface ExpenseAttachment {
   id: string;
@@ -66,8 +66,8 @@ export interface Expense {
   amount: number;
   date: string;
   notes: string;
-  status: 'Pending' | 'Approved' | 'Rejected';
-  paymentMode?: 'Cash' | 'Bank Transfer' | 'Card' | 'UPI';
+  status: 'PENDING' | 'APPROVED' | 'REJECTED';
+  paymentMode?: 'CASH' | 'BANK_TRANSFER' | 'CARD' | 'UPI';
   property?: string;
   attachments?: ExpenseAttachment[];
 }

@@ -106,9 +106,8 @@ public class UserServiceImpl implements UserService {
         if (userDTO.getDateOfJoining() != null) {
             user.setDateOfJoining(userDTO.getDateOfJoining());
         }
-        if (userDTO.getSalary() != null) {
-            user.setSalary(userDTO.getSalary());
-        }
+        // Always update salary field, even if null (to allow clearing)
+        user.setSalary(userDTO.getSalary());
 
         User updatedUser = userRepository.save(user);
         log.info("User updated successfully with ID: {}", updatedUser.getId());

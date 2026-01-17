@@ -1,5 +1,7 @@
 package com.arpay.entity;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonValue;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -71,10 +73,36 @@ public class User {
     private Double salary;
 
     public enum UserRole {
-        ADMIN, MANAGER, EMPLOYEE
+        ADMIN, MANAGER, EMPLOYEE;
+
+        @JsonCreator
+        public static UserRole fromString(String value) {
+            if (value == null) {
+                return null;
+            }
+            return UserRole.valueOf(value.toUpperCase());
+        }
+
+        @JsonValue
+        public String toJson() {
+            return this.name();
+        }
     }
 
     public enum UserStatus {
-        ACTIVE, INACTIVE, DISABLED
+        ACTIVE, INACTIVE, DISABLED;
+
+        @JsonCreator
+        public static UserStatus fromString(String value) {
+            if (value == null) {
+                return null;
+            }
+            return UserStatus.valueOf(value.toUpperCase());
+        }
+
+        @JsonValue
+        public String toJson() {
+            return this.name();
+        }
     }
 }

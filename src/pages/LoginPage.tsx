@@ -127,7 +127,7 @@ export default function LoginPage() {
                 <Input
                   id="email"
                   type="email"
-                  placeholder="name@company.com"
+                  placeholder=" "
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   disabled={isLoading}
@@ -152,7 +152,7 @@ export default function LoginPage() {
                 <Input
                   id="password"
                   type={showPassword ? 'text' : 'password'}
-                  placeholder="••••••••"
+                  placeholder=" "
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   disabled={isLoading}
@@ -194,7 +194,6 @@ export default function LoginPage() {
               Sign in
             </Button>
             <p className="text-center text-sm text-muted-foreground">
-              Demo: Use any email and password to login
             </p>
           </CardFooter>
         </form>
