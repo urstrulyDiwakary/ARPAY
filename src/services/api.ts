@@ -19,23 +19,40 @@ const delay = (ms: number = 500) => new Promise(resolve => setTimeout(resolve, m
 // Generate unique IDs
 const generateId = () => Math.random().toString(36).substring(2, 11);
 
-// Mock Data Storage (in-memory)
-let invoices: Invoice[] = [
-  { id: 'INV-001', clientName: 'Acme Corp', amount: 5000, status: 'Paid', date: '2024-01-15', dueDate: '2024-02-15', lineItems: [{ id: '1', description: 'Consulting Services', quantity: 10, price: 500 }], invoiceType: 'Customer' },
-  { id: 'INV-002', clientName: 'Tech Solutions', amount: 3500, status: 'Pending', date: '2024-01-20', dueDate: '2024-02-20', lineItems: [{ id: '1', description: 'Development', quantity: 7, price: 500 }], invoiceType: 'Project' },
-  { id: 'INV-003', clientName: 'Global Industries', amount: 8000, status: 'Overdue', date: '2023-12-01', dueDate: '2024-01-01', lineItems: [{ id: '1', description: 'Project Management', quantity: 16, price: 500 }], invoiceType: 'Customer' },
-  { id: 'INV-004', clientName: 'StartUp Inc', amount: 2200, status: 'Pending', date: '2024-01-25', dueDate: '2024-02-25', lineItems: [{ id: '1', description: 'Design Services', quantity: 4, price: 550 }], invoiceType: 'Expense' },
+// Mock Data Storage (in-memory with localStorage persistence)
+let invoices: Invoice[] = [];
+
+// Initialize expenses from localStorage or use default data
+const defaultExpenses: Expense[] = [
+  { id: 'EXP-001', category: 'TRAVEL' as any, amount: 450, date: '2024-01-10', notes: 'Client meeting in NYC', status: 'APPROVED' as any, paymentMode: 'CARD' as any },
+  { id: 'EXP-002', category: 'OFFICE' as any, amount: 120, date: '2024-01-12', notes: 'Office supplies', status: 'APPROVED' as any, paymentMode: 'CASH' as any },
+  { id: 'EXP-003', category: 'MARKETING' as any, amount: 2500, date: '2024-01-15', notes: 'Digital ads campaign', status: 'PENDING' as any, paymentMode: 'BANK_TRANSFER' as any },
+  { id: 'EXP-004', category: 'EQUIPMENT' as any, amount: 1800, date: '2024-01-18', notes: 'New laptop', status: 'PENDING' as any, paymentMode: 'CARD' as any },
+  { id: 'EXP-005', category: 'SALARY' as any, amount: 5000, date: '2024-01-25', notes: 'Monthly salary', status: 'APPROVED' as any, paymentMode: 'BANK_TRANSFER' as any },
+  { id: 'EXP-006', category: 'FUEL' as any, amount: 350, date: '2024-01-20', notes: 'Vehicle fuel', status: 'APPROVED' as any, paymentMode: 'CASH' as any },
+  { id: 'EXP-007', category: 'VEHICLE' as any, amount: 800, date: '2024-01-22', notes: 'Car service', status: 'PENDING' as any, paymentMode: 'CARD' as any },
 ];
 
-let expenses: Expense[] = [
-  { id: 'EXP-001', category: 'Travel', amount: 450, date: '2024-01-10', notes: 'Client meeting in NYC', status: 'Approved', paymentMode: 'Card' },
-  { id: 'EXP-002', category: 'Office', amount: 120, date: '2024-01-12', notes: 'Office supplies', status: 'Approved', paymentMode: 'Cash' },
-  { id: 'EXP-003', category: 'Marketing', amount: 2500, date: '2024-01-15', notes: 'Digital ads campaign', status: 'Pending', paymentMode: 'Bank Transfer' },
-  { id: 'EXP-004', category: 'Equipment', amount: 1800, date: '2024-01-18', notes: 'New laptop', status: 'Pending', paymentMode: 'Card' },
-  { id: 'EXP-005', category: 'Salary', amount: 5000, date: '2024-01-25', notes: 'Monthly salary', status: 'Approved', paymentMode: 'Bank Transfer' },
-  { id: 'EXP-006', category: 'Fuel', amount: 350, date: '2024-01-20', notes: 'Vehicle fuel', status: 'Approved', paymentMode: 'Cash' },
-  { id: 'EXP-007', category: 'Vehicle', amount: 800, date: '2024-01-22', notes: 'Car service', status: 'Pending', paymentMode: 'Card' },
-];
+// Helper functions for localStorage
+const getStoredExpenses = (): Expense[] => {
+  try {
+    const stored = localStorage.getItem('arpay_expenses');
+    return stored ? JSON.parse(stored) : defaultExpenses;
+  } catch (error) {
+    console.warn('Failed to load expenses from localStorage:', error);
+    return defaultExpenses;
+  }
+};
+
+const saveExpensesToStorage = (expensesData: Expense[]): void => {
+  try {
+    localStorage.setItem('arpay_expenses', JSON.stringify(expensesData));
+  } catch (error) {
+    console.warn('Failed to save expenses to localStorage:', error);
+  }
+};
+
+let expenses: Expense[] = getStoredExpenses();
 
 let payments: Payment[] = [
   { id: 'PAY-001', invoiceId: 'INV-001', amount: 5000, method: 'Bank Transfer', status: 'Completed', date: '2024-01-20' },
@@ -47,7 +64,7 @@ let approvals: ApprovalRequest[] = [
   { id: 'APR-001', type: 'Expense', requestedBy: 'Jane Smith', amount: 2500, status: 'Pending', date: '2024-01-15', description: 'Marketing campaign budget', priority: 'Urgent' },
   { id: 'APR-002', type: 'Time Off', requestedBy: 'Bob Johnson', amount: 0, status: 'Pending', date: '2024-01-18', description: '3 days vacation', priority: 'Normal' },
   { id: 'APR-003', type: 'Budget', requestedBy: 'Alice Brown', amount: 15000, status: 'Pending', date: '2024-01-20', description: 'Q2 marketing budget increase', priority: 'Urgent' },
-  { id: 'APR-004', type: 'Invoice', requestedBy: 'Mike Wilson', amount: 8500, status: 'Approved', date: '2024-01-10', description: 'New client contract', priority: 'Normal' },
+  { id: 'APR-004', type: 'Invoice', requestedBy: 'Mike Wilson', amount: 8500, status: 'Approved', date: '2024-01-10', description: 'New customer contract', priority: 'Normal' },
   { id: 'APR-005', type: 'Leave', requestedBy: 'Sarah Davis', amount: 0, status: 'Pending', date: '2024-01-22', description: 'Sick leave request', priority: 'Urgent' },
   { id: 'APR-006', type: 'Purchase', requestedBy: 'Tom Green', amount: 3200, status: 'Pending', date: '2024-01-23', description: 'Office equipment purchase', priority: 'Normal' },
 ];
@@ -97,22 +114,27 @@ export const invoiceApi = {
 export const expenseApi = {
   getAll: async (): Promise<Expense[]> => {
     await delay();
+    // Reload from storage to ensure we have latest data
+    expenses = getStoredExpenses();
     return [...expenses];
   },
   create: async (data: Omit<Expense, 'id'>): Promise<Expense> => {
     await delay();
     const newExpense = { ...data, id: `EXP-${generateId()}` };
     expenses = [...expenses, newExpense];
+    saveExpensesToStorage(expenses);
     return newExpense;
   },
   update: async (id: string, data: Partial<Expense>): Promise<Expense> => {
     await delay();
     expenses = expenses.map(exp => exp.id === id ? { ...exp, ...data } : exp);
+    saveExpensesToStorage(expenses);
     return expenses.find(exp => exp.id === id)!;
   },
   delete: async (id: string): Promise<void> => {
     await delay();
     expenses = expenses.filter(exp => exp.id !== id);
+    saveExpensesToStorage(expenses);
   },
 };
 
@@ -299,11 +321,11 @@ export const dashboardApi = {
     // Calculate total revenue from paid invoices
     const totalRevenue = invoices
       .filter(inv => inv.status === 'Paid')
-      .reduce((sum, inv) => sum + inv.amount, 0);
-    
-    // Get unique active customers (clients with recent invoices)
-    const activeCustomers = new Set(invoices.map(inv => inv.clientName)).size;
-    
+      .reduce((sum, inv) => sum + inv.totalAmount, 0);
+
+    // Get unique active customers (customers with recent invoices)
+    const activeCustomers = new Set(invoices.map(inv => inv.customerName)).size;
+
     // Count unique projects from time entries
     const projectCount = new Set(timeEntries.map(entry => entry.project)).size;
     
@@ -340,7 +362,7 @@ let projects: Project[] = [
     id: 'PRJ-001',
     name: 'Website Redesign',
     description: 'Complete redesign of company website with modern UI/UX',
-    client: 'Acme Corp',
+    customer: 'Acme Corp',
     status: 'In Progress',
     priority: 'High',
     startDate: '2024-01-01',
@@ -358,7 +380,7 @@ let projects: Project[] = [
     id: 'PRJ-002',
     name: 'Mobile App',
     description: 'Cross-platform mobile application development',
-    client: 'Tech Solutions',
+    customer: 'Tech Solutions',
     status: 'In Progress',
     priority: 'Critical',
     startDate: '2024-01-15',
@@ -374,9 +396,9 @@ let projects: Project[] = [
   },
   {
     id: 'PRJ-003',
-    name: 'Client Portal',
+    name: 'Customer Portal',
     description: 'Customer-facing dashboard and portal',
-    client: 'Global Industries',
+    customer: 'Global Industries',
     status: 'Not Started',
     priority: 'Medium',
     startDate: '2024-02-01',
@@ -391,7 +413,7 @@ let projects: Project[] = [
     id: 'PRJ-004',
     name: 'ERP Integration',
     description: 'Integration with enterprise resource planning system',
-    client: 'StartUp Inc',
+    customer: 'StartUp Inc',
     status: 'On Hold',
     priority: 'Low',
     startDate: '2023-11-01',

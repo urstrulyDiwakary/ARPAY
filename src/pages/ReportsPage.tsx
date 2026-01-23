@@ -196,8 +196,8 @@ export default function ReportsPage() {
       `invoices-export-${new Date().toISOString().split('T')[0]}`,
       [
         { key: 'id', label: 'Invoice ID' },
-        { key: 'clientName', label: 'Client' },
-        { key: 'amount', label: 'Amount' },
+        { key: 'customerName', label: 'Customer' },
+        { key: 'totalAmount', label: 'Amount' },
         { key: 'status', label: 'Status' },
         { key: 'dueDate', label: 'Due Date' },
       ]

@@ -12,8 +12,8 @@ const navItems = [
     iconColor: 'text-blue-500',
   },
   { 
-    title: 'Invoices', 
-    url: '/invoices', 
+    title: 'Sales Invoices',
+    url: '/invoices',
     icon: FileText,
     activeColor: 'text-purple-600',
     activeBg: 'bg-purple-500/10',

@@ -23,6 +23,12 @@ export interface AuthState {
 export interface InvoiceLineItem {
   id: string;
   description: string;
+  plotNo: string;
+  cents: number;
+  pricePerCent: number;
+  totalAmount: number;
+  discount: number;
+  finalAmount: number;
   quantity: number;
   price: number;
 }
@@ -39,12 +45,21 @@ export type InvoiceType = 'Project' | 'Customer' | 'Expense';
 
 export interface Invoice {
   id: string;
-  clientName: string;
-  amount: number;
-  status: 'Paid' | 'Pending' | 'Overdue';
-  date: string;
+  projectName: string;
+  customerName: string;
+  customerPhone: string;
+  invoiceDate: string;
   dueDate: string;
+  status: 'Paid' | 'Pending' | 'Overdue';
+  totalAmount: number;
   lineItems: InvoiceLineItem[];
+  tokenAmount: number;
+  agreementAmount: number;
+  registrationAmount: number;
+  agreementDueDate: string;
+  agreementDueAmount: number;
+  registrationDueDate: string;
+  registrationDueAmount: number;
   invoiceType: InvoiceType;
   attachments?: InvoiceAttachment[];
 }
@@ -144,7 +159,7 @@ export interface Project {
   id: string;
   name: string;
   description: string;
-  client: string;
+  customer: string;
   status: ProjectStatus;
   priority: ProjectPriority;
   startDate: string;

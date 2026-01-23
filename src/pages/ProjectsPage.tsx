@@ -107,7 +107,7 @@ export default function ProjectsPage() {
   const [formData, setFormData] = useState({
     name: '',
     description: '',
-    client: '',
+    customer: '',
     status: 'Not Started' as ProjectStatus,
     priority: 'Medium' as ProjectPriority,
     startDate: new Date().toISOString().split('T')[0],
@@ -168,7 +168,7 @@ export default function ProjectsPage() {
     setFormData({
       name: '',
       description: '',
-      client: '',
+      customer: '',
       status: 'Not Started',
       priority: 'Medium',
       startDate: new Date().toISOString().split('T')[0],
@@ -186,7 +186,7 @@ export default function ProjectsPage() {
     setFormData({
       name: '',
       description: '',
-      client: '',
+      customer: '',
       status: 'Not Started',
       priority: 'Medium',
       startDate: new Date().toISOString().split('T')[0],
@@ -205,7 +205,7 @@ export default function ProjectsPage() {
     setFormData({
       name: project.name,
       description: project.description,
-      client: project.client,
+      customer: project.customer,
       status: project.status,
       priority: project.priority,
       startDate: project.startDate,
@@ -252,7 +252,7 @@ export default function ProjectsPage() {
       [
         { key: 'id', label: 'Project ID' },
         { key: 'name', label: 'Name' },
-        { key: 'client', label: 'Client' },
+        { key: 'customer', label: 'Customer' },
         { key: 'status', label: 'Status' },
         { key: 'priority', label: 'Priority' },
         { key: 'startDate', label: 'Start Date' },
@@ -291,7 +291,7 @@ export default function ProjectsPage() {
         <div className="flex items-start justify-between">
           <div className="space-y-1">
             <h3 className="font-semibold text-sm">{project.name}</h3>
-            <p className="text-xs text-muted-foreground">{project.client}</p>
+            <p className="text-xs text-muted-foreground">{project.customer}</p>
           </div>
           <div className="flex gap-1">
             <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEditDialog(project)}>
@@ -530,7 +530,7 @@ export default function ProjectsPage() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Project</TableHead>
-                    <TableHead>Client</TableHead>
+                    <TableHead>Customer</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Priority</TableHead>
                     <TableHead>Progress</TableHead>
@@ -562,7 +562,7 @@ export default function ProjectsPage() {
                               <p className="text-xs text-muted-foreground truncate max-w-[200px]">{project.description}</p>
                             </div>
                           </TableCell>
-                          <TableCell>{project.client}</TableCell>
+                          <TableCell>{project.customer}</TableCell>
                           <TableCell>
                             <Badge variant="outline" className={statusColors[project.status]}>
                               <StatusIcon className="h-3 w-3 mr-1" />
@@ -688,11 +688,11 @@ export default function ProjectsPage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="client">Client</Label>
+                <Label htmlFor="customer">Customer</Label>
                 <Input
-                  id="client"
-                  value={formData.client}
-                  onChange={(e) => setFormData({ ...formData, client: e.target.value })}
+                  id="customer"
+                  value={formData.customer}
+                  onChange={(e) => setFormData({ ...formData, customer: e.target.value })}
                   required
                 />
               </div>

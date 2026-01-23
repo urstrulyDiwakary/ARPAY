@@ -597,7 +597,7 @@ export default function PaymentsPage() {
                 <SelectContent>
                   {invoices?.map((inv) => (
                     <SelectItem key={inv.id} value={inv.id}>
-                      {inv.id} - {inv.clientName}
+                      {inv.id} - {inv.customerName}
                     </SelectItem>
                   ))}
                 </SelectContent>

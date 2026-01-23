@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { expenseApi } from '@/services/api';
@@ -89,6 +89,9 @@ const CHART_COLORS = [
   'hsl(174, 72%, 56%)',   // chart-7 - teal
   'hsl(45, 93%, 47%)',    // chart-8 - yellow
 ];
+
+// Order of payment modes for charts
+const PAYMENT_MODES: Expense['paymentMode'][] = ['CASH', 'CARD', 'BANK_TRANSFER', 'UPI'];
 
 // Helper function to format enum values for display
 const formatForDisplay = (value: string): string => {
@@ -201,7 +204,7 @@ export default function ExpensesPage() {
       date: expense.date,
       notes: expense.notes,
       status: expense.status,
-      paymentMode: expense.paymentMode || 'Cash',
+      paymentMode: expense.paymentMode || 'CASH',
       attachments: expense.attachments || [],
     });
     setIsDialogOpen(true);
@@ -273,14 +276,38 @@ export default function ExpensesPage() {
   const highestExpense = expenses?.reduce((max, e) => e.amount > max ? e.amount : max, 0) || 0;
   const totalUserSalary = users?.reduce((sum, user) => sum + (user.salary || 0), 0) || 0;
 
-  // Property-wise expenses data (mock data for demonstration)
-  const propertyData = [
-    { name: 'Property A', value: 25000, fill: CHART_COLORS[0] },
-    { name: 'Property B', value: 18000, fill: CHART_COLORS[1] },
-    { name: 'Property C', value: 32000, fill: CHART_COLORS[2] },
-    { name: 'Property D', value: 15000, fill: CHART_COLORS[3] },
-    { name: 'Property E', value: 22000, fill: CHART_COLORS[4] },
-  ];
+  // Property-wise and trend data derived from real expenses
+  const propertyData = useMemo(() => {
+    if (!expenses) return [];
+    const totals = new Map<string, number>();
+    expenses.forEach((expense) => {
+      if (!expense.property) return;
+      totals.set(expense.property, (totals.get(expense.property) || 0) + expense.amount);
+    });
+    return Array.from(totals.entries()).map(([name, value], index) => ({
+      name,
+      value,
+      fill: CHART_COLORS[index % CHART_COLORS.length],
+    }));
+  }, [expenses]);
+
+  const monthlyTrendData = useMemo(() => {
+    if (!expenses) return [];
+    const monthlyTotals = new Map<string, { label: string; total: number }>();
+
+    expenses.forEach((expense) => {
+      const date = new Date(expense.date);
+      if (Number.isNaN(date.getTime())) return;
+      const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+      const label = date.toLocaleString('en-US', { month: 'short' });
+      const current = monthlyTotals.get(key)?.total || 0;
+      monthlyTotals.set(key, { label, total: current + expense.amount });
+    });
+
+    return Array.from(monthlyTotals.entries())
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([, { label, total }]) => ({ month: label, amount: total }));
+  }, [expenses]);
 
   // Chart Data
   const categoryData = categories.map((cat, index) => ({
@@ -289,21 +316,17 @@ export default function ExpensesPage() {
     fill: CHART_COLORS[index % CHART_COLORS.length],
   })).filter(d => d.value > 0);
 
-  const monthlyTrendData = [
-    { month: 'Jan', amount: 4500 },
-    { month: 'Feb', amount: 3800 },
-    { month: 'Mar', amount: 5200 },
-    { month: 'Apr', amount: 4100 },
-    { month: 'May', amount: 4800 },
-    { month: 'Jun', amount: totalExpenses },
-  ];
-
-  const paymentModeData = [
-    { name: 'Cash', value: expenses?.filter(e => e.paymentMode === 'Cash').reduce((sum, e) => sum + e.amount, 0) || 0, fill: '#6366f1' },
-    { name: 'Card', value: expenses?.filter(e => e.paymentMode === 'Card').reduce((sum, e) => sum + e.amount, 0) || 0, fill: '#10b981' },
-    { name: 'Bank Transfer', value: expenses?.filter(e => e.paymentMode === 'Bank Transfer').reduce((sum, e) => sum + e.amount, 0) || 0, fill: '#f59e0b' },
-    { name: 'UPI', value: expenses?.filter(e => e.paymentMode === 'UPI').reduce((sum, e) => sum + e.amount, 0) || 0, fill: '#ec4899' },
-  ].filter(d => d.value > 0);
+  const paymentModeData = useMemo(() => {
+    if (!expenses) return [];
+    return PAYMENT_MODES.map((mode, index) => {
+      const value = expenses.filter((e) => e.paymentMode === mode).reduce((sum, e) => sum + e.amount, 0);
+      return {
+        name: formatForDisplay(mode),
+        value,
+        fill: CHART_COLORS[index % CHART_COLORS.length],
+      };
+    }).filter((entry) => entry.value > 0);
+  }, [expenses]);
 
   const handleExportAll = () => {
     if (!filteredExpenses || filteredExpenses.length === 0) {

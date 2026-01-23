@@ -39,7 +39,7 @@ import {
   Cell,
 } from 'recharts';
 
-const projects = ['Website Redesign', 'Mobile App', 'Client Portal', 'Marketing Campaign', 'Internal Tools'];
+const projects = ['Website Redesign', 'Mobile App', 'Customer Portal', 'Marketing Campaign', 'Internal Tools'];
 
 export default function TimeTrackingPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);

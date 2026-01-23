@@ -137,6 +137,21 @@ const Sidebar = React.forwardRef<
   }
 >(({ side = "left", variant = "sidebar", collapsible = "offcanvas", className, children, ...props }, ref) => {
   const { isMobile, state, openMobile, setOpenMobile } = useSidebar();
+  const dragStartX = React.useRef<number | null>(null);
+  const handlePointerDown = React.useCallback((event: React.PointerEvent) => {
+    dragStartX.current = event.clientX;
+  }, []);
+  const handlePointerUp = React.useCallback(
+    (event: React.PointerEvent) => {
+      if (dragStartX.current === null) return;
+      const deltaX = event.clientX - dragStartX.current;
+      if (deltaX > 60) {
+        setOpenMobile(false);
+      }
+      dragStartX.current = null;
+    },
+    [setOpenMobile],
+  );
 
   if (collapsible === "none") {
     return (
@@ -163,6 +178,8 @@ const Sidebar = React.forwardRef<
             } as React.CSSProperties
           }
           side={side}
+          onPointerDown={handlePointerDown}
+          onPointerUp={handlePointerUp}
         >
           <div className="flex h-full w-full flex-col">{children}</div>
         </SheetContent>
