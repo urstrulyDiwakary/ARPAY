@@ -33,11 +33,21 @@ const DialogContent = React.forwardRef<
   React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content>
 >(({ className, children, ...props }, ref) => {
   const hasTitle = React.useMemo(() => {
-    return React.Children.toArray(children).some((child) => {
-      if (!React.isValidElement(child)) return false;
-      const type = child.type as any;
-      return type === DialogPrimitive.Title || type?.displayName === DialogPrimitive.Title.displayName;
-    });
+    const checkForTitle = (nodes: React.ReactNode): boolean => {
+      return React.Children.toArray(nodes).some((child) => {
+        if (!React.isValidElement(child)) return false;
+        const type = child.type as any;
+        // Check if it's a DialogTitle component or DialogPrimitive.Title
+        if (type === DialogPrimitive.Title) return true;
+        if (type?.displayName === "DialogTitle" || type?.displayName === DialogPrimitive.Title.displayName) return true;
+        // Also check children recursively in case Title is nested
+        if (child.props?.children) {
+          return checkForTitle(child.props.children);
+        }
+        return false;
+      });
+    };
+    return checkForTitle(children);
   }, [children]);
 
   return (

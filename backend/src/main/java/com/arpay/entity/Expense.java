@@ -27,6 +27,9 @@ public class Expense {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
+    @Column(nullable = false, length = 50, unique = true)
+    private String invoiceNumber;  // AR-EXP-001, AR-EXP-002, etc.
+
     @Column(nullable = false, length = 200)
     private String title;
 
@@ -57,6 +60,9 @@ public class Expense {
 
     @Column(length = 100)
     private String property;
+
+    @Column(length = 255)
+    private String projectName;
 
     @Column(columnDefinition = "TEXT")
     private String attachments;

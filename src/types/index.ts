@@ -41,27 +41,35 @@ export interface InvoiceAttachment {
   size: number;
 }
 
-export type InvoiceType = 'Project' | 'Customer' | 'Expense';
+export type InvoiceType = 'PROJECT' | 'CUSTOMER' | 'EXPENSE';
+
+export type LeadSourceType = 'Marketing Data' | 'Old Data' | 'Direct Lead' | 'Referral' | 'Social Media' | 'Others';
 
 export interface Invoice {
   id: string;
-  projectName: string;
+  invoiceNumber?: string;
+  projectName?: string;
   customerName: string;
-  customerPhone: string;
+  customerPhone?: string;
+  reference?: string;
+  leadSource?: LeadSourceType;
   invoiceDate: string;
   dueDate: string;
-  status: 'Paid' | 'Pending' | 'Overdue';
+  status: 'PAID' | 'PENDING' | 'OVERDUE' | 'PARTIAL';
+  amount: number;
+  tax?: number;
   totalAmount: number;
   lineItems: InvoiceLineItem[];
-  tokenAmount: number;
-  agreementAmount: number;
-  registrationAmount: number;
-  agreementDueDate: string;
-  agreementDueAmount: number;
-  registrationDueDate: string;
-  registrationDueAmount: number;
+  tokenAmount?: number;
+  agreementAmount?: number;
+  registrationAmount?: number;
+  agreementDueDate?: string;
+  agreementDueAmount?: number;
+  registrationDueDate?: string;
+  registrationDueAmount?: number;
   invoiceType: InvoiceType;
   attachments?: InvoiceAttachment[];
+  notes?: string;
 }
 
 // Expense Types
@@ -73,10 +81,13 @@ export interface ExpenseAttachment {
   type: 'image' | 'pdf' | 'document';
   url: string;
   size: number;
+  dataUrl?: string;
+  mimeType?: string;
 }
 
 export interface Expense {
   id: string;
+  invoiceNumber?: string;
   category: ExpenseCategory;
   amount: number;
   date: string;
@@ -84,6 +95,7 @@ export interface Expense {
   status: 'PENDING' | 'APPROVED' | 'REJECTED';
   paymentMode?: 'CASH' | 'BANK_TRANSFER' | 'CARD' | 'UPI';
   property?: string;
+  projectName?: string;
   attachments?: ExpenseAttachment[];
 }
 
@@ -155,6 +167,19 @@ export interface ProjectMilestone {
   completed: boolean;
 }
 
+// Project Master Type - Central master data for projects
+export interface ProjectMaster {
+  id?: number | string; // Can be number from DB or string for temporary IDs
+  projectName: string; // Project name (e.g., "Ananta Giri")
+  propertyName: string; // Property/Phase name (e.g., "Ananta Giri Farm Lands")
+  plotNumber: string; // Plot number
+  plotArea: number; // Area in cents
+  plotPrice: number; // Price per cent
+  createdAt?: string;
+  updatedAt?: string;
+  isActive?: boolean;
+}
+
 export interface Project {
   id: string;
   name: string;
@@ -169,4 +194,46 @@ export interface Project {
   progress: number;
   teamMembers: string[];
   milestones: ProjectMilestone[];
+  projectType?: 'general' | 'real-estate';
+}
+
+// Real Estate Project Types
+export interface RealEstateSale {
+  id: string;
+  plotNumber: string;
+  buyerName: string;
+  saleAmount: number;
+  status: 'pending' | 'in-progress' | 'completed' | 'rejected';
+  saleDate: string;
+  paymentReceived: number;
+  remainingAmount: number;
+}
+
+export interface RealEstateProjectDetails {
+  id: string;
+  projectName: string;
+  projectLocation: string;
+  totalArea: number; // in cents/sq.ft
+  launchDate: string;
+  expectedCompletionDate: string;
+  totalBudget: number;
+  totalExpenses: number;
+  totalSalesValue: number;
+  totalUnitsAvailable: number;
+  totalUnitsSold: number;
+  salesInProgress: number;
+  salesPending: number;
+  salesRejected: number;
+  timeline: {
+    phase: string;
+    startDate: string;
+    endDate: string;
+    status: 'planned' | 'ongoing' | 'completed';
+  }[];
+  sales: RealEstateSale[];
+  expenses: {
+    category: string;
+    amount: number;
+    date: string;
+  }[];
 }

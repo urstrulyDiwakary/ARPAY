@@ -96,7 +96,6 @@ const permissionModules = [
   { id: 'payments', name: 'Payments', icon: CreditCard },
   { id: 'approvals', name: 'Approvals', icon: ClipboardCheck },
   { id: 'reports', name: 'Reports', icon: BarChart3 },
-  { id: 'time_tracking', name: 'Time Tracking', icon: Timer },
   { id: 'users', name: 'Users', icon: Users },
   { id: 'notifications', name: 'Notifications', icon: Bell },
 ];
@@ -109,7 +108,7 @@ const getDefaultPermissions = (role: string): string[] => {
   } else if (normalizedRole === 'MANAGER') {
     return permissionModules.map(p => p.id);
   } else {
-    return ['dashboard', 'invoices', 'expenses', 'payments', 'approvals', 'time_tracking', 'notifications'];
+    return ['dashboard', 'invoices', 'expenses', 'payments', 'approvals', 'notifications'];
   }
 };
 
@@ -153,7 +152,7 @@ export default function UsersPage() {
     password: '',
     status: 'ACTIVE',
     profilePhoto: null,
-    permissions: ['dashboard', 'invoices', 'expenses', 'payments', 'approvals', 'time_tracking', 'notifications'],
+    permissions: ['dashboard', 'invoices', 'expenses', 'payments', 'approvals', 'notifications'],
     department: '',
     dateOfJoining: '',
     salary: '',
@@ -267,7 +266,7 @@ export default function UsersPage() {
         password: '',
         status: 'ACTIVE',
         profilePhoto: null,
-        permissions: ['dashboard', 'invoices', 'expenses', 'payments', 'approvals', 'time_tracking', 'notifications'],
+        permissions: ['dashboard', 'invoices', 'expenses', 'payments', 'approvals', 'notifications'],
         department: '',
         dateOfJoining: '',
         salary: '',

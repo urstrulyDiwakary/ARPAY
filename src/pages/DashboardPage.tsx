@@ -118,7 +118,6 @@ export default function DashboardPage() {
   const quickLinks = [
     { title: 'Create Invoice', description: 'Generate new invoice', icon: FileText, link: '/invoices' },
     { title: 'Log Expense', description: 'Record expense', icon: Receipt, link: '/expenses' },
-    { title: 'Track Time', description: 'Log hours', icon: Clock, link: '/time-tracking' },
     { title: 'View Reports', description: 'Analyze data', icon: BarChart3, link: '/reports' },
   ];
 

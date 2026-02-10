@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+
+import { useNavigate } from 'react-router-dom';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { projectApi } from '@/services/api';
 import { Project, ProjectStatus, ProjectPriority, ProjectMilestone } from '@/types';
@@ -61,6 +63,8 @@ import {
   XCircle,
   Flag,
   Check,
+  ArrowRight,
+  Building2,
 } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
@@ -554,11 +558,18 @@ export default function ProjectsPage() {
                       const StatusIcon = statusIcons[project.status];
                       const daysRemaining = getDaysRemaining(project.endDate);
                       const milestoneStats = getMilestoneStats(project.milestones);
+                      const isRealEstate = project.projectType === 'real-estate';
                       return (
-                        <TableRow key={project.id}>
+                        <TableRow key={project.id} className={`cursor-pointer hover:bg-accent transition-colors ${isRealEstate ? 'bg-blue-50/30' : ''}`}
+                          onClick={() => navigate(`/projects/${project.id}`)}>
                           <TableCell>
                             <div>
-                              <p className="font-medium">{project.name}</p>
+                              <div className="flex items-center gap-2">
+                                <p className="font-medium">{project.name}</p>
+                                {isRealEstate && (
+                                  <Building2 className="h-4 w-4 text-blue-600" title="Real Estate Project" />
+                                )}
+                              </div>
                               <p className="text-xs text-muted-foreground truncate max-w-[200px]">{project.description}</p>
                             </div>
                           </TableCell>
@@ -607,7 +618,7 @@ export default function ProjectsPage() {
                               <p className="text-xs text-muted-foreground">Spent: ₹{project.spent.toLocaleString('en-IN')}</p>
                             </div>
                           </TableCell>
-                          <TableCell className="text-right">
+                          <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                             <div className="flex justify-end gap-1">
                               <Button variant="ghost" size="icon" onClick={() => openEditDialog(project)}>
                                 <Pencil className="h-4 w-4" />

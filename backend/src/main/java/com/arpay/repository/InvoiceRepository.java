@@ -44,8 +44,11 @@ public interface InvoiceRepository extends JpaRepository<Invoice, UUID> {
     long countByStatus(@Param("status") Invoice.InvoiceStatus status);
 
     @Query("SELECT i FROM Invoice i WHERE " +
-           "LOWER(i.clientName) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+           "LOWER(i.customerName) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
            "LOWER(i.invoiceNumber) LIKE LOWER(CONCAT('%', :search, '%'))")
     Page<Invoice> searchInvoices(@Param("search") String search, Pageable pageable);
+
+    @Query(value = "SELECT generate_invoice_number()", nativeQuery = true)
+    String generateInvoiceNumber();
 }
 

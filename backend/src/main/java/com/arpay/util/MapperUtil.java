@@ -55,10 +55,7 @@ public class MapperUtil {
     // Expense Mapping
     public ExpenseDTO mapToExpenseDTO(Expense expense) {
         ExpenseDTO dto = modelMapper.map(expense, ExpenseDTO.class);
-        if (expense.getPaidBy() != null) {
-            dto.setPaidById(expense.getPaidBy().getId());
-            dto.setPaidByName(expense.getPaidBy().getName());
-        }
+        // Don't set paidById and paidByName as they're not in the new ExpenseDTO
         return dto;
     }
 
@@ -84,19 +81,6 @@ public class MapperUtil {
         return modelMapper.map(dto, Approval.class);
     }
 
-    // TimeTracking Mapping
-    public TimeTrackingDTO mapToTimeTrackingDTO(TimeTracking timeTracking) {
-        TimeTrackingDTO dto = modelMapper.map(timeTracking, TimeTrackingDTO.class);
-        if (timeTracking.getUser() != null) {
-            dto.setUserId(timeTracking.getUser().getId());
-            dto.setUserName(timeTracking.getUser().getName());
-        }
-        return dto;
-    }
-
-    public TimeTracking mapToTimeTrackingEntity(TimeTrackingDTO dto) {
-        return modelMapper.map(dto, TimeTracking.class);
-    }
 
     // Notification Mapping
     public NotificationDTO mapToNotificationDTO(Notification notification) {

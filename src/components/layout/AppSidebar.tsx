@@ -1,4 +1,4 @@
-import { LayoutDashboard, FileText, Receipt, CreditCard, ClipboardCheck, BarChart3, Clock, Users, Bell, FolderKanban, X } from 'lucide-react';
+import { LayoutDashboard, FileText, Receipt, CreditCard, ClipboardCheck, BarChart3, Users, Bell, FolderKanban, X, Database } from 'lucide-react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarHeader, SidebarFooter, useSidebar } from '@/components/ui/sidebar';
 import { cn } from '@/lib/utils';
@@ -41,15 +41,15 @@ const sidebarOnlyItems = [{
   icon: FolderKanban,
   color: 'text-violet-500'
 }, {
+  title: 'Projects Master',
+  url: '/projects-master',
+  icon: Database,
+  color: 'text-indigo-500'
+}, {
   title: 'Reports',
   url: '/reports',
   icon: BarChart3,
   color: 'text-cyan-500'
-}, {
-  title: 'Time Tracking',
-  url: '/time-tracking',
-  icon: Clock,
-  color: 'text-teal-500'
 }, {
   title: 'Users',
   url: '/users',

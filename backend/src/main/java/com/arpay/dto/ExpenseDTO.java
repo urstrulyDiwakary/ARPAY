@@ -1,6 +1,5 @@
 package com.arpay.dto;
 
-import com.arpay.entity.Expense;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -11,7 +10,7 @@ import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 @Data
@@ -20,39 +19,50 @@ import java.util.UUID;
 public class ExpenseDTO {
     private UUID id;
 
-    @NotBlank(message = "Title is required")
+    @NotBlank(message = "Invoice number is required")
+    private String invoiceNumber;  // AR-EXP-001, etc.
+
     private String title;
 
-    @NotNull(message = "Category is required")
-    private Expense.ExpenseCategory category;
+    @NotBlank(message = "Category is required")
+    private String category;  // TRAVEL, OFFICE, etc. - as string
 
     @NotNull(message = "Amount is required")
     @Positive(message = "Amount must be positive")
     private BigDecimal amount;
 
-    @NotNull(message = "Expense date is required")
+    @NotNull(message = "Date is required")
     @JsonFormat(pattern = "yyyy-MM-dd")
-    private LocalDate expenseDate;
-
-    @NotNull(message = "Paid by is required")
-    private UUID paidById;
-
-    private String paidByName;
-
-    private Expense.PaymentMode paymentMode;
+    private LocalDate date;
 
     private String notes;
 
-    @NotNull(message = "Status is required")
-    private Expense.ExpenseStatus status;
+    @NotBlank(message = "Status is required")
+    private String status;  // PENDING, APPROVED, REJECTED - as string
+
+    private String paymentMode;  // CASH, CARD, BANK_TRANSFER, UPI - as string
 
     private String property;
-    private String attachments;
+
+    private String projectName;  // Project name from frontend
+
+    private List<AttachmentDTO> attachments;  // Changed from String to List
 
     @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
-    private LocalDateTime createdAt;
+    private java.time.LocalDateTime createdAt;
 
     @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
-    private LocalDateTime updatedAt;
+    private java.time.LocalDateTime updatedAt;
+
+    // Inner class for attachment DTO
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class AttachmentDTO {
+        private String id;
+        private String name;
+        private long size;
+        private String type;
+    }
 }
 

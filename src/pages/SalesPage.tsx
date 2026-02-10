@@ -1,7 +1,7 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { MainLayout } from '@/components/layout/MainLayout';
-import { invoiceApi, projectApi } from '@/services/api';
+import { invoiceApi, projectApi, userApi, projectMasterApi } from '@/services/api';
 import { Invoice, InvoiceLineItem, InvoiceType, InvoiceAttachment, Project } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -41,15 +41,25 @@ import { exportToCSV } from '@/utils/export';
 import { exportInvoiceToPDF } from '@/utils/pdfExport';
 
 const statusColors: Record<Invoice['status'], string> = {
-  Paid: 'bg-green-500/10 text-green-600 border-green-500/20',
-  Pending: 'bg-amber-500/10 text-amber-600 border-amber-500/20',
-  Overdue: 'bg-destructive/10 text-destructive border-destructive/20',
+  PAID: 'bg-green-500/10 text-green-600 border-green-500/20',
+  PENDING: 'bg-amber-500/10 text-amber-600 border-amber-500/20',
+  OVERDUE: 'bg-destructive/10 text-destructive border-destructive/20',
+  PARTIAL: 'bg-blue-500/10 text-blue-600 border-blue-500/20',
 };
 
 const invoiceTypeColors: Record<InvoiceType, string> = {
-  Project: 'bg-blue-500/10 text-blue-600 border-blue-500/20',
-  Customer: 'bg-purple-500/10 text-purple-600 border-purple-500/20',
-  Expense: 'bg-orange-500/10 text-orange-600 border-orange-500/20',
+  PROJECT: 'bg-blue-500/10 text-blue-600 border-blue-500/20',
+  CUSTOMER: 'bg-purple-500/10 text-purple-600 border-purple-500/20',
+  EXPENSE: 'bg-orange-500/10 text-orange-600 border-orange-500/20',
+};
+
+// Helper functions to format enum values for display
+const formatStatus = (status: Invoice['status']): string => {
+  return status.charAt(0) + status.slice(1).toLowerCase();
+};
+
+const formatInvoiceType = (type: InvoiceType): string => {
+  return type.charAt(0) + type.slice(1).toLowerCase();
 };
 
 export default function InvoicesPage() {
@@ -62,175 +72,56 @@ export default function InvoicesPage() {
   const [typeFilter, setTypeFilter] = useState<string>('all');
   const [plotSearchQuery, setPlotSearchQuery] = useState('');
 
-  // Project names
-  const projectNames = [
-    { value: 'Ananta Giri', label: 'Ananta Giri' },
-    { value: 'Ananta Nidhi', label: 'Ananta Nidhi' },
-  ];
-
-  // Project/Property options for description dropdown
-  const projectOptions = [
-    { value: 'Ananta Giri Farm Lands', label: 'Ananta Giri Farm Lands', pricePerCent: 200000, project: 'Ananta Giri' },
-    { value: 'Ananta Nidhi Open Plots', label: 'Ananta Nidhi Open Plots', pricePerCent: 330000, project: 'Ananta Nidhi' },
-  ];
-
-  // Ananta Giri plot data with cents
-  const anantaGiriPlots = [
-    { plotNo: '1', cents: 11.17 },
-    { plotNo: '2', cents: 11.13 },
-    { plotNo: '3', cents: 13.94 },
-    { plotNo: '4', cents: 14.34 },
-    { plotNo: '5', cents: 14.73 },
-    { plotNo: '6', cents: 23.64 },
-    { plotNo: '7', cents: 11.03 },
-    { plotNo: '8', cents: 17.21 },
-    { plotNo: '9', cents: 8.61 },
-    { plotNo: '10to12', cents: 11.47 },
-    { plotNo: '13', cents: 22.75 },
-    { plotNo: '14', cents: 10.6 },
-    { plotNo: '15to19', cents: 12.05 },
-    { plotNo: '20', cents: 24.67 },
-    { plotNo: '21', cents: 12.68 },
-    { plotNo: '22to25', cents: 12.05 },
-    { plotNo: '26', cents: 18.64 },
-    { plotNo: '27', cents: 18.18 },
-    { plotNo: '28to32', cents: 12.05 },
-    { plotNo: '33', cents: 15.19 },
-    { plotNo: '34', cents: 34.17 },
-    { plotNo: '35to37', cents: 12.05 },
-    { plotNo: '38', cents: 15.41 },
-    { plotNo: '39', cents: 11.15 },
-    { plotNo: '40to44', cents: 12.05 },
-    { plotNo: '45', cents: 18.89 },
-    { plotNo: '46', cents: 18.49 },
-    { plotNo: '47to51', cents: 12.05 },
-    { plotNo: '52', cents: 13.27 },
-    { plotNo: '53', cents: 11.85 },
-    { plotNo: '54to58', cents: 12.05 },
-    { plotNo: '59', cents: 21.02 },
-    { plotNo: '60', cents: 28.43 },
-    { plotNo: '61to64', cents: 12.05 },
-    { plotNo: '65', cents: 18.24 },
-    { plotNo: '66', cents: 9.9 },
-    { plotNo: '67', cents: 8.48 },
-    { plotNo: '68', cents: 8.57 },
-    { plotNo: '69', cents: 8.66 },
-    { plotNo: '70', cents: 8.8 },
-    { plotNo: '71', cents: 8.83 },
-    { plotNo: '72', cents: 19 },
-    { plotNo: '73', cents: 18.32 },
-    { plotNo: '74', cents: 9.34 },
-    { plotNo: '75', cents: 9.42 },
-    { plotNo: '76', cents: 9.51 },
-    { plotNo: '77', cents: 9.6 },
-    { plotNo: '78', cents: 13.51 },
-  ];
-
-  // Ananta Nidhi plot data
-  const anantaNidhiPlots = [
-    { plotNo: '1', cents: 3.9 },
-    { plotNo: '2', cents: 3.88 },
-    { plotNo: '3', cents: 3.87 },
-    { plotNo: '4to5', cents: 3.85 },
-    { plotNo: '6', cents: 3.81 },
-    { plotNo: '7', cents: 7.58 },
-    { plotNo: '8', cents: 7.68 },
-    { plotNo: '9', cents: 3.87 },
-    { plotNo: '10', cents: 3.89 },
-    { plotNo: '11', cents: 3.91 },
-    { plotNo: '12', cents: 7.89 },
-    { plotNo: '13', cents: 8.02 },
-    { plotNo: '14', cents: 4.04 },
-    { plotNo: '15', cents: 4.06 },
-    { plotNo: '16', cents: 4.08 },
-    { plotNo: '17', cents: 4.1 },
-    { plotNo: '18', cents: 4.12 },
-    { plotNo: '19', cents: 4.14 },
-    { plotNo: '20to25', cents: 4.04 },
-    { plotNo: '26to27', cents: 8.08 },
-    { plotNo: '28to30', cents: 4.04 },
-    { plotNo: '31to32', cents: 8.08 },
-    { plotNo: '33to36', cents: 4.04 },
-    { plotNo: '37', cents: 3.76 },
-    { plotNo: '38', cents: 3.15 },
-    { plotNo: '39to41', cents: 3.01 },
-    { plotNo: '42to43', cents: 6.02 },
-    { plotNo: '44to46', cents: 3.01 },
-    { plotNo: '47to48', cents: 6.02 },
-    { plotNo: '49to60', cents: 3.01 },
-    { plotNo: '61to62', cents: 6.02 },
-    { plotNo: '63to65', cents: 3.01 },
-    { plotNo: '66to67', cents: 6.02 },
-    { plotNo: '68to69', cents: 3.01 },
-    { plotNo: '70', cents: 3.0 },
-    { plotNo: '71to72', cents: 6.02 },
-    { plotNo: '73to75', cents: 3.01 },
-    { plotNo: '76to77', cents: 6.02 },
-    { plotNo: '78to89', cents: 3.01 },
-    { plotNo: '90to91', cents: 6.02 },
-    { plotNo: '92to94', cents: 3.01 },
-    { plotNo: '95to98', cents: 6.02 },
-    { plotNo: '99to101', cents: 3.01 },
-    { plotNo: '102to103', cents: 6.02 },
-    { plotNo: '104to115', cents: 3.01 },
-    { plotNo: '116to117', cents: 6.02 },
-    { plotNo: '118to120', cents: 3.01 },
-    { plotNo: '121to122', cents: 6.02 },
-    { plotNo: '123', cents: 2.94 },
-    { plotNo: '124', cents: 3.01 },
-    { plotNo: '125to126', cents: 6.02 },
-    { plotNo: '127to129', cents: 3.01 },
-    { plotNo: '130to131', cents: 6.02 },
-    { plotNo: '132to143', cents: 3.01 },
-    { plotNo: '144to145', cents: 6.02 },
-    { plotNo: '146to148', cents: 3.01 },
-    { plotNo: '149to150', cents: 6.02 },
-    { plotNo: '151to152', cents: 3.01 },
-    { plotNo: '153', cents: 2.22 },
-    { plotNo: '154', cents: 3.19 },
-    { plotNo: '155to157', cents: 3.01 },
-    { plotNo: '158to159', cents: 6.02 },
-    { plotNo: '160to162', cents: 3.01 },
-    { plotNo: '163to164', cents: 6.02 },
-    { plotNo: '165to176', cents: 3.01 },
-    { plotNo: '177to178', cents: 6.02 },
-    { plotNo: '179to181', cents: 3.01 },
-    { plotNo: '182to183', cents: 6.02 },
-    { plotNo: '184to187', cents: 3.01 },
-    { plotNo: '188', cents: 2.48 },
-    { plotNo: '189', cents: 1.15 },
-    { plotNo: '190to195', cents: 4.93 },
-    { plotNo: '196to197', cents: 9.87 },
-    { plotNo: '198to200', cents: 4.93 },
-    { plotNo: '201to202', cents: 9.87 },
-    { plotNo: '203to208', cents: 4.93 },
-    { plotNo: '209to214', cents: 5.0 },
-    { plotNo: '215to216', cents: 10.0 },
-    { plotNo: '217to219', cents: 5.0 },
-    { plotNo: '220to221', cents: 10.0 },
-    { plotNo: '222to227', cents: 5.0 },
-    { plotNo: '228', cents: 4.13 },
-    { plotNo: '229', cents: 4.05 },
-    { plotNo: '230', cents: 3.98 },
-    { plotNo: '231', cents: 3.9 },
-    { plotNo: '232', cents: 3.82 },
-    { plotNo: '233', cents: 3.75 },
-    { plotNo: '234', cents: 7.28 },
-    { plotNo: '235', cents: 6.87 },
-    { plotNo: '236', cents: 3.39 },
-    { plotNo: '237', cents: 3.36 },
-    { plotNo: '238', cents: 3.33 },
-    { plotNo: '239', cents: 6.58 },
-    { plotNo: '240', cents: 6.42 },
-    { plotNo: '241', cents: 3.16 },
-    { plotNo: '242', cents: 3.14 },
-    { plotNo: '243', cents: 3.11 },
-    { plotNo: '244', cents: 3.08 },
-    { plotNo: '245', cents: 3.05 },
-    { plotNo: '246', cents: 3.02 },
-  ];
-
   const queryClient = useQueryClient();
+
+  // Fetch project masters from database
+  const { data: projectMasters = [] } = useQuery({
+    queryKey: ['projectMasters'],
+    queryFn: projectMasterApi.getAll,
+  });
+
+  // Generate unique project names from database
+  const projectNames = useMemo(() => {
+    const uniqueProjects = [...new Set(projectMasters.map(pm => pm.projectName))];
+    return uniqueProjects.map(name => ({ value: name, label: name }));
+  }, [projectMasters]);
+
+  // Generate project/property options from database
+  const projectOptions = useMemo(() => {
+    const uniqueProperties = new Map();
+    projectMasters.forEach(pm => {
+      if (!uniqueProperties.has(pm.propertyName)) {
+        uniqueProperties.set(pm.propertyName, {
+          value: pm.propertyName,
+          label: pm.propertyName,
+          pricePerCent: pm.plotPrice,
+          project: pm.projectName,
+        });
+      }
+    });
+    return Array.from(uniqueProperties.values());
+  }, [projectMasters]);
+
+  // Get plots by project name
+  const getPlotsByProject = (projectName: string) => {
+    return projectMasters
+      .filter(pm => pm.projectName === projectName)
+      .map(pm => ({
+        plotNo: pm.plotNumber,
+        cents: pm.plotArea,
+      }));
+  };
+
+  // Get plots by property name
+  const getPlotsByProperty = (propertyName: string) => {
+    return projectMasters
+      .filter(pm => pm.propertyName === propertyName)
+      .map(pm => ({
+        plotNo: pm.plotNumber,
+        cents: pm.plotArea,
+      }));
+  };
+
   const { toast } = useToast();
 
   const { data: invoices, isLoading } = useQuery({
@@ -245,6 +136,11 @@ export default function InvoicesPage() {
   const { data: projects } = useQuery({
     queryKey: ['projects'],
     queryFn: projectApi.getAll,
+  });
+
+  const { data: users = [] } = useQuery({
+    queryKey: ['users'],
+    queryFn: () => userApi.getAll(),
   });
 
   // Get used plot numbers from existing invoices
@@ -262,23 +158,19 @@ export default function InvoicesPage() {
   // Get available plots based on property selection
   const getAvailablePlots = (propertyName: string, excludeInvoiceId?: string) => {
     const usedPlots = getUsedPlots(propertyName, excludeInvoiceId);
-
-    if (propertyName === 'Ananta Giri Farm Lands') {
-      return anantaGiriPlots.filter(plot => !usedPlots.includes(plot.plotNo));
-    } else if (propertyName === 'Ananta Nidhi Open Plots') {
-      return anantaNidhiPlots.filter(plot => !usedPlots.includes(plot.plotNo));
-    }
-    return [];
+    return getPlotsByProperty(propertyName).filter(plot => !usedPlots.includes(plot.plotNo));
   };
 
   const [formData, setFormData] = useState({
     projectName: '',
     customerName: '',
     customerPhone: '',
-    status: 'Pending' as Invoice['status'],
+    reference: '',
+    leadSource: '',
+    status: 'PENDING' as Invoice['status'],
     invoiceDate: new Date().toISOString().split('T')[0],
     dueDate: '',
-    invoiceType: 'Customer' as InvoiceType,
+    invoiceType: 'CUSTOMER' as InvoiceType,
     lineItems: [{
       id: '1',
       description: '',
@@ -306,19 +198,17 @@ export default function InvoicesPage() {
   // Filter invoices based on search, status, and type/project
   const filteredInvoices = invoices?.filter((invoice) => {
     const matchesSearch = (invoice.customerName?.toLowerCase() || '').includes(searchQuery.toLowerCase()) ||
+                          (invoice.invoiceNumber?.toLowerCase() || '').includes(searchQuery.toLowerCase()) ||
                           (invoice.id?.toLowerCase() || '').includes(searchQuery.toLowerCase());
-    const matchesStatus = statusFilter === 'all' || invoice.status === statusFilter;
+    const matchesStatus = statusFilter === 'all' || invoice.status?.toUpperCase() === statusFilter.toUpperCase();
 
     // Handle invoice status, project name, and type filters
     let matchesType = true;
     if (typeFilter === 'Paid') {
-      matchesType = invoice.status === 'Paid';
-    } else if (typeFilter === 'Ananta Giri') {
-      matchesType = invoice.projectName === 'Ananta Giri';
-    } else if (typeFilter === 'Ananta Nidhi') {
-      matchesType = invoice.projectName === 'Ananta Nidhi';
+      matchesType = invoice.status?.toUpperCase() === 'PAID';
     } else if (typeFilter !== 'all') {
-      matchesType = invoice.invoiceType === typeFilter;
+      // Dynamic project filters (fallback to invoice type if needed)
+      matchesType = invoice.projectName === typeFilter || invoice.invoiceType === typeFilter;
     }
 
     return matchesSearch && matchesStatus && matchesType;
@@ -388,10 +278,10 @@ export default function InvoicesPage() {
       projectName: '',
       customerName: '',
       customerPhone: '',
-      status: 'Pending',
+      status: 'PENDING',
       invoiceDate: new Date().toISOString().split('T')[0],
       dueDate: '',
-      invoiceType: 'Customer',
+      invoiceType: 'CUSTOMER',
       lineItems: [{
         id: '1',
         description: '',
@@ -422,10 +312,10 @@ export default function InvoicesPage() {
       projectName: '',
       customerName: '',
       customerPhone: '',
-      status: 'Pending',
+      status: 'PENDING',
       invoiceDate: new Date().toISOString().split('T')[0],
       dueDate: '',
-      invoiceType: 'Customer',
+      invoiceType: 'CUSTOMER',
       lineItems: [{
         id: '1',
         description: '',
@@ -454,22 +344,24 @@ export default function InvoicesPage() {
     console.log('Opening edit dialog for invoice:', invoice.id);
     setSelectedInvoice(invoice);
     setFormData({
-      projectName: invoice.projectName,
+      projectName: invoice.projectName || '',
       customerName: invoice.customerName,
-      customerPhone: invoice.customerPhone,
+      customerPhone: invoice.customerPhone || '',
+      reference: invoice.reference || '',
+      leadSource: invoice.leadSource || '',
       status: invoice.status,
       invoiceDate: invoice.invoiceDate,
       dueDate: invoice.dueDate,
       invoiceType: invoice.invoiceType,
       lineItems: invoice.lineItems,
       attachments: invoice.attachments || [],
-      tokenAmount: invoice.tokenAmount,
-      agreementAmount: invoice.agreementAmount,
-      registrationAmount: invoice.registrationAmount,
-      agreementDueDate: invoice.agreementDueDate,
-      agreementDueAmount: invoice.agreementDueAmount,
-      registrationDueDate: invoice.registrationDueDate,
-      registrationDueAmount: invoice.registrationDueAmount,
+      tokenAmount: invoice.tokenAmount || 0,
+      agreementAmount: invoice.agreementAmount || 0,
+      registrationAmount: invoice.registrationAmount || 0,
+      agreementDueDate: invoice.agreementDueDate || '',
+      agreementDueAmount: invoice.agreementDueAmount || 0,
+      registrationDueDate: invoice.registrationDueDate || '',
+      registrationDueAmount: invoice.registrationDueAmount || 0,
     });
     setIsDialogOpen(true);
     console.log('Edit dialog opened, formData set');
@@ -611,11 +503,32 @@ export default function InvoicesPage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Manual validation
+    if (!formData.customerName?.trim()) {
+      toast({ title: 'Validation Error', description: 'Customer Name is required', variant: 'destructive' });
+      return;
+    }
+    if (!formData.invoiceDate) {
+      toast({ title: 'Validation Error', description: 'Invoice Date is required', variant: 'destructive' });
+      return;
+    }
+    if (!formData.dueDate) {
+      toast({ title: 'Validation Error', description: 'Due Date is required', variant: 'destructive' });
+      return;
+    }
+
+    const total = calculateTotal();
+
+    // Sanitize data before sending
     const invoiceData = {
       projectName: formData.projectName,
       customerName: formData.customerName,
       customerPhone: formData.customerPhone,
-      totalAmount: calculateTotal(),
+      reference: formData.reference,
+      leadSource: formData.leadSource,
+      amount: total, // Ensure amount is sent
+      totalAmount: total,
       status: formData.status,
       invoiceDate: formData.invoiceDate,
       dueDate: formData.dueDate,
@@ -625,9 +538,10 @@ export default function InvoicesPage() {
       tokenAmount: formData.tokenAmount,
       agreementAmount: formData.agreementAmount,
       registrationAmount: formData.registrationAmount,
-      agreementDueDate: formData.agreementDueDate,
+      // Send undefined for empty date strings to avoid 400 Bad Request
+      agreementDueDate: formData.agreementDueDate || undefined,
       agreementDueAmount: formData.agreementDueAmount,
-      registrationDueDate: formData.registrationDueDate,
+      registrationDueDate: formData.registrationDueDate || undefined,
       registrationDueAmount: formData.registrationDueAmount,
     };
 
@@ -676,10 +590,35 @@ export default function InvoicesPage() {
   const isMutating = createMutation.isPending || updateMutation.isPending;
   const totalAmount = filteredInvoices?.reduce((sum, inv) => sum + inv.totalAmount, 0) || 0;
 
-  // Count by project name and status
-  const anantaGiriCount = invoices?.filter(i => i.projectName === 'Ananta Giri').length || 0;
-  const paidCount = invoices?.filter(i => i.status === 'Paid').length || 0;
-  const anantaNidhiCount = invoices?.filter(i => i.projectName === 'Ananta Nidhi').length || 0;
+  // Helper function to get user name from ID
+  const getUserNameById = (userId: string) => {
+    if (!Array.isArray(users)) return userId;
+    const user = users.find((u: any) => u.id === userId);
+    return user ? user.name : userId;
+  };
+
+  // Get unique project names and their counts dynamically
+  const uniqueProjects = useMemo(() => {
+    if (!invoices) return [];
+    const projectMap = new Map<string, number>();
+
+    invoices.forEach(invoice => {
+      if (invoice.projectName) {
+        projectMap.set(
+          invoice.projectName,
+          (projectMap.get(invoice.projectName) || 0) + 1
+        );
+      }
+    });
+
+    return Array.from(projectMap.entries()).map(([name, count]) => ({
+      name,
+      count
+    }));
+  }, [invoices]);
+
+  // Count by status
+  const paidCount = invoices?.filter(i => i.status?.toUpperCase() === 'PAID').length || 0;
 
   // Mobile Card Component
   const InvoiceCard = ({ invoice }: { invoice: Invoice }) => (
@@ -687,21 +626,24 @@ export default function InvoicesPage() {
       <div className="flex items-start justify-between">
         <div className="space-y-1">
           <div className="flex items-center gap-2 flex-wrap">
-            <p className="font-semibold text-sm">{invoice.id}</p>
-            <Badge variant="outline" className={invoiceTypeColors[invoice.invoiceType]}>
-              {invoice.invoiceType}
-            </Badge>
+            <p className="font-semibold text-sm">{invoice.invoiceNumber || invoice.id}</p>
+            {invoice.projectName && (
+              <Badge variant="outline" className="bg-blue-500/10 text-blue-600 border-blue-500/20">
+                {invoice.projectName}
+              </Badge>
+            )}
           </div>
           <p className="text-foreground text-sm">{invoice.customerName}</p>
         </div>
         <Badge variant="outline" className={statusColors[invoice.status]}>
-          {invoice.status}
+          {formatStatus(invoice.status)}
         </Badge>
       </div>
       <div className="flex items-center justify-between pt-2 border-t">
         <div>
           <p className="text-xl font-bold bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">₹{invoice.totalAmount.toLocaleString('en-IN')}</p>
-          <p className="text-xs text-muted-foreground">{invoice.invoiceDate}</p>
+          <p className="text-xs text-muted-foreground">Invoice: {invoice.invoiceDate}</p>
+          <p className="text-xs text-muted-foreground">Due: {invoice.dueDate || '-'}</p>
         </div>
         <div className="flex gap-1">
           <Button variant="ghost" size="icon" className="h-8 w-8 text-blue-600" onClick={() => openViewDialog(invoice)}>
@@ -761,26 +703,33 @@ export default function InvoicesPage() {
               <p className={`text-lg sm:text-xl font-bold ${typeFilter === 'all' ? 'text-primary' : ''}`}>{invoices?.length || 0}</p>
             </CardContent>
           </Card>
-          <Card
-            className={`cursor-pointer transition-all hover:shadow-md ${typeFilter === 'Ananta Giri' ? 'ring-2 ring-blue-500 border-blue-500 bg-gradient-to-br from-blue-500/10 to-blue-500/5' : ''}`}
-            onClick={() => setTypeFilter('Ananta Giri')}
-          >
-            <CardContent className="p-3 sm:p-4 flex flex-col items-center text-center">
-              <FolderKanban className={`h-5 w-5 sm:h-6 sm:w-6 mb-1 ${typeFilter === 'Ananta Giri' ? 'text-blue-600' : 'text-blue-500'}`} />
-              <p className="text-xs sm:text-sm font-medium">Ananta Giri</p>
-              <p className="text-lg sm:text-xl font-bold text-blue-600">{anantaGiriCount}</p>
-            </CardContent>
-          </Card>
-          <Card
-            className={`cursor-pointer transition-all hover:shadow-md ${typeFilter === 'Ananta Nidhi' ? 'ring-2 ring-orange-500 border-orange-500 bg-gradient-to-br from-orange-500/10 to-orange-500/5' : ''}`}
-            onClick={() => setTypeFilter('Ananta Nidhi')}
-          >
-            <CardContent className="p-3 sm:p-4 flex flex-col items-center text-center">
-              <Receipt className={`h-5 w-5 sm:h-6 sm:w-6 mb-1 ${typeFilter === 'Ananta Nidhi' ? 'text-orange-600' : 'text-orange-500'}`} />
-              <p className="text-xs sm:text-sm font-medium">Ananta Nidhi</p>
-              <p className="text-lg sm:text-xl font-bold text-orange-600">{anantaNidhiCount}</p>
-            </CardContent>
-          </Card>
+
+          {/* Dynamic Project Cards */}
+          {uniqueProjects.map((project, index) => {
+            const colors = [
+              { ring: 'ring-blue-500', border: 'border-blue-500', bg: 'from-blue-500/10 to-blue-500/5', text: 'text-blue-600', icon: 'text-blue-500' },
+              { ring: 'ring-orange-500', border: 'border-orange-500', bg: 'from-orange-500/10 to-orange-500/5', text: 'text-orange-600', icon: 'text-orange-500' },
+              { ring: 'ring-purple-500', border: 'border-purple-500', bg: 'from-purple-500/10 to-purple-500/5', text: 'text-purple-600', icon: 'text-purple-500' },
+              { ring: 'ring-pink-500', border: 'border-pink-500', bg: 'from-pink-500/10 to-pink-500/5', text: 'text-pink-600', icon: 'text-pink-500' },
+            ];
+            const color = colors[index % colors.length];
+            const isActive = typeFilter === project.name;
+
+            return (
+              <Card
+                key={project.name}
+                className={`cursor-pointer transition-all hover:shadow-md ${isActive ? `ring-2 ${color.ring} ${color.border} bg-gradient-to-br ${color.bg}` : ''}`}
+                onClick={() => setTypeFilter(project.name)}
+              >
+                <CardContent className="p-3 sm:p-4 flex flex-col items-center text-center">
+                  <FolderKanban className={`h-5 w-5 sm:h-6 sm:w-6 mb-1 ${isActive ? color.text : color.icon}`} />
+                  <p className="text-xs sm:text-sm font-medium">{project.name}</p>
+                  <p className={`text-lg sm:text-xl font-bold ${color.text}`}>{project.count}</p>
+                </CardContent>
+              </Card>
+            );
+          })}
+
           <Card
             className={`cursor-pointer transition-all hover:shadow-md ${typeFilter === 'Paid' ? 'ring-2 ring-green-500 border-green-500 bg-gradient-to-br from-green-500/10 to-green-500/5' : ''}`}
             onClick={() => setTypeFilter('Paid')}
@@ -860,34 +809,40 @@ export default function InvoicesPage() {
               <table className="w-full">
                 <thead>
                   <tr className="border-b text-left">
-                    <th className="pb-3 font-medium">Invoice ID</th>
-                    <th className="pb-3 font-medium">Type</th>
+                    <th className="pb-3 font-medium">Invoice Number</th>
+                    <th className="pb-3 font-medium">Project Name</th>
                     <th className="pb-3 font-medium">Customer</th>
                     <th className="pb-3 font-medium">Amount</th>
                     <th className="pb-3 font-medium">Status</th>
                     <th className="pb-3 font-medium">Date</th>
-                    <th className="pb-3 font-medium text-right">Actions</th>
+                    <th className="pb-3 font-medium">Due Date</th>
+                    <th className="pb-3 font-medium text-center">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {filteredInvoices?.map((invoice) => (
                     <tr key={invoice.id} className="border-b last:border-0 hover:bg-muted/50 transition-colors">
-                      <td className="py-3 font-medium">{invoice.id}</td>
+                      <td className="py-3 font-medium">{invoice.invoiceNumber || invoice.id}</td>
                       <td className="py-3">
-                        <Badge variant="outline" className={invoiceTypeColors[invoice.invoiceType]}>
-                          {invoice.invoiceType}
-                        </Badge>
+                        {invoice.projectName ? (
+                          <Badge variant="outline" className="bg-blue-500/10 text-blue-600 border-blue-500/20">
+                            {invoice.projectName}
+                          </Badge>
+                        ) : (
+                          <span className="text-muted-foreground text-sm">-</span>
+                        )}
                       </td>
                       <td className="py-3">{invoice.customerName}</td>
                       <td className="py-3 font-semibold">₹{invoice.totalAmount.toLocaleString('en-IN')}</td>
                       <td className="py-3">
                         <Badge variant="outline" className={statusColors[invoice.status]}>
-                          {invoice.status}
+                          {formatStatus(invoice.status)}
                         </Badge>
                       </td>
                       <td className="py-3">{invoice.invoiceDate}</td>
-                      <td className="py-3 text-right">
-                        <div className="flex justify-end gap-1">
+                      <td className="py-3">{invoice.dueDate || '-'}</td>
+                      <td className="py-3 text-center">
+                        <div className="flex justify-center gap-1">
                           <Button variant="ghost" size="icon" onClick={() => openViewDialog(invoice)}>
                             <Eye className="h-4 w-4" />
                           </Button>
@@ -922,7 +877,7 @@ export default function InvoicesPage() {
       <Dialog open={isViewDialogOpen} onOpenChange={(open) => { if (!open) { setIsViewDialogOpen(false); setSelectedInvoice(null); } }}>
         <DialogContent className="max-w-[95vw] sm:max-w-lg max-h-[90vh] overflow-y-auto bg-background">
           <DialogHeader>
-            <DialogTitle className="text-foreground">Invoice {selectedInvoice?.id || 'N/A'}</DialogTitle>
+            <DialogTitle className="text-foreground">Invoice {selectedInvoice?.invoiceNumber || selectedInvoice?.id || 'N/A'}</DialogTitle>
             <DialogDescription>Invoice details</DialogDescription>
           </DialogHeader>
           {selectedInvoice ? (
@@ -932,16 +887,30 @@ export default function InvoicesPage() {
                   <Label className="text-xs text-muted-foreground">Customer</Label>
                   <p className="font-medium">{selectedInvoice.customerName}</p>
                 </div>
+                {selectedInvoice.reference && (
+                  <div>
+                    <Label className="text-xs text-muted-foreground">Reference</Label>
+                    <p className="font-medium text-sm">{getUserNameById(selectedInvoice.reference)}</p>
+                  </div>
+                )}
+                {selectedInvoice.leadSource && (
+                  <div>
+                    <Label className="text-xs text-muted-foreground">Lead Source</Label>
+                    <Badge variant="outline" className="bg-purple-500/10 text-purple-600 border-purple-500/20">
+                      {selectedInvoice.leadSource}
+                    </Badge>
+                  </div>
+                )}
                 <div>
                   <Label className="text-xs text-muted-foreground">Type</Label>
                   <Badge variant="outline" className={invoiceTypeColors[selectedInvoice.invoiceType]}>
-                    {selectedInvoice.invoiceType}
+                    {formatInvoiceType(selectedInvoice.invoiceType)}
                   </Badge>
                 </div>
                 <div>
                   <Label className="text-xs text-muted-foreground">Status</Label>
                   <Badge variant="outline" className={statusColors[selectedInvoice.status]}>
-                    {selectedInvoice.status}
+                    {formatStatus(selectedInvoice.status)}
                   </Badge>
                 </div>
                 <div>
@@ -1067,9 +1036,10 @@ export default function InvoicesPage() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent position="popper" side="bottom">
-                    <SelectItem value="Pending">Pending</SelectItem>
-                    <SelectItem value="Paid">Paid</SelectItem>
-                    <SelectItem value="Overdue">Overdue</SelectItem>
+                    <SelectItem value="PENDING">Pending</SelectItem>
+                    <SelectItem value="PAID">Paid</SelectItem>
+                    <SelectItem value="OVERDUE">Overdue</SelectItem>
+                    <SelectItem value="PARTIAL">Partial</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -1080,6 +1050,7 @@ export default function InvoicesPage() {
                   value={formData.customerName}
                   onChange={(e) => setFormData({ ...formData, customerName: e.target.value })}
                   placeholder="Enter customer name"
+                  required
                 />
               </div>
               <div className="space-y-2">
@@ -1090,6 +1061,51 @@ export default function InvoicesPage() {
                   onChange={(e) => setFormData({ ...formData, customerPhone: e.target.value })}
                   placeholder="Enter customer phone"
                 />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="reference">Reference (User)</Label>
+                <Select
+                  key={`reference-${formData.reference || 'empty'}`}
+                  value={formData.reference}
+                  onValueChange={(value) => setFormData({ ...formData, reference: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select user reference" />
+                  </SelectTrigger>
+                  <SelectContent position="popper" side="bottom">
+                    {Array.isArray(users) && users.length > 0 ? (
+                      users.map((user: any) => (
+                        <SelectItem key={user.id} value={user.id}>
+                          {user.name}
+                        </SelectItem>
+                      ))
+                    ) : (
+                      <div className="p-2 text-sm text-muted-foreground text-center">
+                        No users available
+                      </div>
+                    )}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="leadSource">Lead Source</Label>
+                <Select
+                  key={`leadSource-${formData.leadSource || 'empty'}`}
+                  value={formData.leadSource}
+                  onValueChange={(value) => setFormData({ ...formData, leadSource: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select lead source" />
+                  </SelectTrigger>
+                  <SelectContent position="popper" side="bottom">
+                    <SelectItem value="Marketing Data">Marketing Data</SelectItem>
+                    <SelectItem value="Old Data">Old Data</SelectItem>
+                    <SelectItem value="Direct Lead">Direct Lead</SelectItem>
+                    <SelectItem value="Referral">Referral</SelectItem>
+                    <SelectItem value="Social Media">Social Media</SelectItem>
+                    <SelectItem value="Others">Others</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="invoiceDate">Invoice Date</Label>
@@ -1270,11 +1286,12 @@ export default function InvoicesPage() {
                         min="0"
                       />
                       <p className="text-xs text-muted-foreground break-words">
-                        {item.description === 'Ananta Giri Farm Lands'
-                          ? 'Default: ₹2,00,000 (editable)'
-                          : item.description === 'Ananta Nidhi Open Plots'
-                          ? 'Default: ₹3,30,000 (editable)'
-                          : 'Enter price per cent'}
+                        {(() => {
+                          const selectedProject = projectOptions.find(p => p.value === item.description);
+                          return selectedProject
+                            ? `Default: ₹${selectedProject.pricePerCent.toLocaleString('en-IN')} (editable)`
+                            : 'Enter price per cent';
+                        })()}
                       </p>
                     </div>
                   </div>
